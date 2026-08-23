@@ -43,7 +43,9 @@ export async function createTestApp(): Promise<TestApp> {
     throw new Error(`Banco de teste fora de ${TEST_DB_DIR}: ${dbPath}. O setup-env.ts rodou?`);
   }
 
-  await app.init();
+  // Escuta numa porta efêmera: com o servidor já ativo, o supertest não tenta
+  // chamar `listen()` a cada requisição (o que quebra requisições concorrentes).
+  await app.listen(0, "127.0.0.1");
 
   return {
     app,
