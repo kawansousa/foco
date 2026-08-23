@@ -9,7 +9,6 @@ import { FoAvatar } from "@/components/avatar/fo-avatar";
 import { cn } from "@/lib/utils";
 
 const links = [
-  { href: "#como-funciona", label: "Como funciona" },
   { href: "#recursos", label: "Recursos" },
   { href: "#demo", label: "Demo" },
   { href: "#trofeus", label: "Troféus" },

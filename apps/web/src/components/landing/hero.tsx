@@ -53,7 +53,7 @@ export function Hero() {
               </a>
             </Button>
             <Button size="lg" variant="outline" asChild>
-              <a href="#como-funciona">
+              <a href="#recursos">
                 <Sparkles /> Ver como funciona
               </a>
             </Button>
