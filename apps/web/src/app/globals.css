@@ -144,6 +144,45 @@
   .mask-fade-b {
     mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
   }
+  /* grade no tom da marca — usada pelo efeito de hover da hero */
+  .bg-grid-primary {
+    background-image:
+      linear-gradient(to right, color-mix(in oklch, var(--primary) 60%, transparent) 1px, transparent 1px),
+      linear-gradient(to bottom, color-mix(in oklch, var(--primary) 60%, transparent) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+  /* aparece/some conforme o mouse entra/sai da hero */
+  .grid-glow-fade {
+    opacity: var(--glow, 0);
+    transition: opacity 0.4s ease;
+  }
+  /* recorte circular que acompanha o cursor (some junto do fade inferior da grade) */
+  .grid-glow-spot {
+    mask-image:
+      radial-gradient(220px circle at var(--gx) var(--gy), black 0%, transparent 75%),
+      linear-gradient(to bottom, black 50%, transparent 100%);
+    mask-composite: intersect;
+    -webkit-mask-composite: source-in;
+  }
+  /* halo difuso no cursor, mesmo brilho das bordas do celular (primary + blur) */
+  .grid-glow-halo {
+    background: radial-gradient(
+      260px circle at var(--gx) var(--gy),
+      color-mix(in oklch, var(--primary) 22%, transparent),
+      transparent 70%
+    );
+    filter: blur(28px);
+    animation: grid-glow-pulse 2.6s ease-in-out infinite;
+  }
+  @keyframes grid-glow-pulse {
+    0%,
+    100% {
+      opacity: 0.65;
+    }
+    50% {
+      opacity: 1;
+    }
+  }
   .text-balance {
     text-wrap: balance;
   }

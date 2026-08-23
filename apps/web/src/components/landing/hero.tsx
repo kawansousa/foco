@@ -3,6 +3,7 @@
 import { motion } from "motion/react";
 import { ArrowRight, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { GridGlow } from "./grid-glow";
 import { PhoneMockup } from "./phone-mockup";
 
 const fadeUp = {
@@ -12,11 +13,11 @@ const fadeUp = {
 
 export function Hero() {
   return (
-    <section className="relative overflow-hidden pt-32 pb-20 sm:pt-40 sm:pb-28">
-      <div className="bg-grid mask-fade-b pointer-events-none absolute inset-0 -z-10" />
+    <section className="relative flex min-h-svh items-center overflow-hidden pt-24 pb-10 sm:pt-28 sm:pb-12">
+      <GridGlow />
       <div className="pointer-events-none absolute left-1/2 top-0 -z-10 h-[480px] w-[800px] -translate-x-1/2 rounded-full bg-primary/10 blur-3xl" />
 
-      <div className="mx-auto grid max-w-6xl items-start gap-12 px-4 sm:px-6 lg:grid-cols-2 lg:gap-8">
+      <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-10 px-4 sm:px-6 lg:flex-row lg:justify-center lg:gap-24">
         <motion.div
           initial="hidden"
           animate="show"
@@ -36,7 +37,7 @@ export function Hero() {
             diga o quanto foi difícil — e veja seu avanço virar conquista, um dia de cada vez.
           </motion.p>
 
-          <motion.div variants={fadeUp} className="mt-8 flex flex-col gap-3 sm:flex-row">
+          <motion.div variants={fadeUp} className="mt-7 flex flex-col gap-3 sm:flex-row">
             <Button size="lg" asChild>
               <a href="#cta">
                 Começar grátis <ArrowRight />
@@ -49,7 +50,7 @@ export function Hero() {
             </Button>
           </motion.div>
 
-          <motion.dl variants={fadeUp} className="mt-10 grid grid-cols-3 gap-6 border-t pt-8">
+          <motion.dl variants={fadeUp} className="mt-8 grid grid-cols-3 gap-6 border-t pt-6">
             {[
               ["97%", "sentem mais constância"],
               ["4,9★", "nota média na loja"],

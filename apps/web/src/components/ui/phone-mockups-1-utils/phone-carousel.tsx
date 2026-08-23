@@ -9,6 +9,8 @@ import { cn } from "@/lib/utils";
 
 export type ImageItem = {
   src: string;
+  /** Variante da imagem para o tema escuro (troca via CSS, sem flash). */
+  srcDark?: string;
   alt: string;
   /** Legenda opcional exibida abaixo do telefone central. */
   caption?: string;
@@ -18,10 +20,12 @@ type PhoneFrameProps = {
   image: ImageItem;
   priority?: boolean;
   className?: string;
+  /** Desenha a "ilha" preta no topo. Desative quando a imagem já é um print real do app. */
+  notch?: boolean;
 };
 
 /** Moldura de iPhone com notch, usada para cada slide do carrossel. */
-export function PhoneFrame({ image, priority = false, className }: PhoneFrameProps) {
+export function PhoneFrame({ image, priority = false, className, notch = true }: PhoneFrameProps) {
   return (
     <div
       className={cn(
@@ -30,16 +34,29 @@ export function PhoneFrame({ image, priority = false, className }: PhoneFramePro
       )}
     >
       <div className="relative aspect-[9/19.5] overflow-hidden rounded-[2rem] border bg-background">
-        <div className="absolute left-1/2 top-2 z-20 h-6 w-24 -translate-x-1/2 rounded-full bg-foreground/90" />
+        {notch && (
+          <div className="absolute left-1/2 top-2 z-20 h-6 w-24 -translate-x-1/2 rounded-full bg-foreground/90" />
+        )}
         <Image
           src={image.src}
           alt={image.alt}
           fill
           sizes="(min-width: 640px) 270px, 240px"
           priority={priority}
-          className="object-cover"
+          className={cn("object-cover", image.srcDark && "dark:hidden")}
           draggable={false}
         />
+        {image.srcDark && (
+          <Image
+            src={image.srcDark}
+            alt={image.alt}
+            fill
+            sizes="(min-width: 640px) 270px, 240px"
+            priority={priority}
+            className="hidden object-cover dark:block"
+            draggable={false}
+          />
+        )}
       </div>
     </div>
   );
@@ -50,11 +67,13 @@ export type PhoneCarouselProps = {
   /** Troca automática de slide (ms). Use 0 para desativar. */
   autoPlayInterval?: number;
   className?: string;
+  /** Desenha a "ilha" preta no topo de cada moldura. Desative para prints reais do app. */
+  notch?: boolean;
 };
 
 const SWIPE_THRESHOLD = 60;
 
-export function PhoneCarousel({ images, autoPlayInterval = 4500, className }: PhoneCarouselProps) {
+export function PhoneCarousel({ images, autoPlayInterval = 4500, className, notch = true }: PhoneCarouselProps) {
   const [index, setIndex] = React.useState(0);
   const [direction, setDirection] = React.useState<1 | -1>(1);
   const [paused, setPaused] = React.useState(false);
@@ -109,7 +128,7 @@ export function PhoneCarousel({ images, autoPlayInterval = 4500, className }: Ph
             aria-hidden
             className="absolute left-1/2 hidden -translate-x-[calc(50%+220px)] scale-[0.82] opacity-40 blur-[1px] transition-all md:block lg:-translate-x-[calc(50%+260px)]"
           >
-            <PhoneFrame image={prev} />
+            <PhoneFrame image={prev} notch={notch} />
           </div>
         )}
 
@@ -131,7 +150,7 @@ export function PhoneCarousel({ images, autoPlayInterval = 4500, className }: Ph
               exit={{ opacity: 0, x: direction * -80, scale: 0.94 }}
               transition={{ duration: 0.45, ease: [0.21, 0.47, 0.32, 0.98] }}
             >
-              <PhoneFrame image={current} priority={index === 0} />
+              <PhoneFrame image={current} priority={index === 0} notch={notch} />
             </motion.div>
           </AnimatePresence>
         </motion.div>
@@ -141,7 +160,7 @@ export function PhoneCarousel({ images, autoPlayInterval = 4500, className }: Ph
             aria-hidden
             className="absolute left-1/2 hidden translate-x-[calc(-50%+220px)] scale-[0.82] opacity-40 blur-[1px] transition-all md:block lg:translate-x-[calc(-50%+260px)]"
           >
-            <PhoneFrame image={next} />
+            <PhoneFrame image={next} notch={notch} />
           </div>
         )}
       </div>
