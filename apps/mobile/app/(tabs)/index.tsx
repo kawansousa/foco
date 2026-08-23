@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import { Link, useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Animated, Platform, Pressable, View } from "react-native";
 import { formatDayLabel, todayISO, type FoMessage, type TodayResponse, type TodayStep } from "@foco/shared";
@@ -19,7 +19,7 @@ function localTime() {
 
 export default function Today() {
   const { colors } = useTheme();
-  const { user } = useAuth();
+  const { user, addTrophies } = useAuth();
   const router = useRouter();
   const date = todayISO();
   const { data, error, loading, refreshing, refresh, setData } = useQuery(() => api.today(date), [date]);
@@ -28,6 +28,9 @@ export default function Today() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const navTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** true entre concluir um passo e fechar o modal "Como foi?" — bloqueia os outros passos */
+  const [locked, setLocked] = useState(false);
 
   const showToast = useCallback((m: FoMessage) => {
     setToast(m);
@@ -35,31 +38,61 @@ export default function Today() {
     toastTimer.current = setTimeout(() => setToast(null), 4500);
   }, []);
 
-  useEffect(() => () => {
-    if (toastTimer.current) clearTimeout(toastTimer.current);
-  }, []);
+  useEffect(
+    () => () => {
+      if (toastTimer.current) clearTimeout(toastTimer.current);
+      if (navTimer.current) clearTimeout(navTimer.current);
+    },
+    [],
+  );
+
+  // Voltou para esta tela (modal fechou) → libera os outros passos.
+  useFocusEffect(
+    useCallback(() => {
+      setLocked(false);
+    }, []),
+  );
 
   const toggle = async (step: TodayStep) => {
-    if (!data || busyId) return;
+    if (!data || busyId || locked) return;
     const nextDone = !step.done;
     setBusyId(step.goal.id);
     setActionError(null);
     // otimista
     setData((d) => d && patchStep(d, step.goal.id, nextDone));
     try {
-      const res = await api.checkins.upsert({ goalId: step.goal.id, date, done: nextDone, localTime: localTime() });
+      const res = await api.checkins.upsert({
+        goalId: step.goal.id,
+        date,
+        done: nextDone,
+        localTime: localTime(),
+      });
       if (Platform.OS !== "web") {
         Haptics.notificationAsync(nextDone ? Haptics.NotificationFeedbackType.Success : Haptics.NotificationFeedbackType.Warning);
       }
-      setData((d) => d && { ...patchStep(d, step.goal.id, nextDone, res.checkin.difficulty), streak: res.streak });
+      setData(
+        (d) =>
+          d && {
+            ...patchStep(d, step.goal.id, nextDone, res.checkin.difficulty),
+            streak: res.streak,
+          },
+      );
       if (nextDone) {
         if (res.dayComplete) {
           setCelebrate(true);
           setTimeout(() => setCelebrate(false), 2400);
         }
+        addTrophies(res.newTrophies.length);
         const trophies = res.newTrophies.map((t) => t.code).join(",");
-        setTimeout(
-          () => router.push({ pathname: "/checkin", params: { goalId: step.goal.id, date, trophies } }),
+        // um modal por vez: trava até o "Como foi?" fechar
+        setLocked(true);
+        if (navTimer.current) clearTimeout(navTimer.current);
+        navTimer.current = setTimeout(
+          () =>
+            router.push({
+              pathname: "/checkin",
+              params: { goalId: step.goal.id, date, trophies },
+            }),
           res.dayComplete ? 1800 : 150,
         );
       } else {
@@ -84,13 +117,6 @@ export default function Today() {
         title={data && data.total > 0 ? "Seus passos" : `Oi, ${user?.name.split(" ")[0] ?? ""}`}
         refreshing={refreshing}
         onRefresh={refresh}
-        right={
-          <Link href="/goals/new" asChild>
-            <Pressable hitSlop={8} style={{ padding: 6 }} accessibilityLabel="Nova meta">
-              <Ionicons name="add-circle" size={30} color={colors.primary} />
-            </Pressable>
-          </Link>
-        }
       >
         {error && <Banner>{error}</Banner>}
         {actionError && <Banner>{actionError}</Banner>}
@@ -143,7 +169,7 @@ export default function Today() {
             ) : (
               <View style={{ gap: space.sm }}>
                 {data.steps.map((s) => (
-                  <StepRow key={s.goal.id} step={s} busy={busyId === s.goal.id} onPress={() => toggle(s)} />
+                  <StepRow key={s.goal.id} step={s} busy={busyId === s.goal.id} disabled={locked} onPress={() => toggle(s)} />
                 ))}
               </View>
             )}
@@ -164,7 +190,11 @@ function patchStep(d: TodayResponse, goalId: string, done: boolean, difficulty?:
           ...s,
           done,
           checkin: s.checkin
-            ? { ...s.checkin, done, difficulty: difficulty ?? s.checkin.difficulty }
+            ? {
+                ...s.checkin,
+                done,
+                difficulty: difficulty ?? s.checkin.difficulty,
+              }
             : {
                 id: "tmp",
                 goalId,
@@ -181,14 +211,14 @@ function patchStep(d: TodayResponse, goalId: string, done: boolean, difficulty?:
   return { ...d, steps, doneCount: steps.filter((s) => s.done).length };
 }
 
-function StepRow({ step, busy, onPress }: { step: TodayStep; busy: boolean; onPress: () => void }) {
+function StepRow({ step, busy, disabled, onPress }: { step: TodayStep; busy: boolean; disabled?: boolean; onPress: () => void }) {
   const { colors } = useTheme();
   const router = useRouter();
   const done = step.done;
   return (
     <Pressable
       onPress={onPress}
-      disabled={busy}
+      disabled={busy || disabled}
       accessibilityRole="checkbox"
       accessibilityState={{ checked: done }}
       style={({ pressed }) => ({
@@ -200,7 +230,7 @@ function StepRow({ step, busy, onPress }: { step: TodayStep; busy: boolean; onPr
         borderWidth: 1,
         borderColor: done ? colors.primary + "55" : colors.border,
         backgroundColor: done ? colors.primarySoft : colors.card,
-        opacity: pressed || busy ? 0.7 : 1,
+        opacity: pressed || busy ? 0.7 : disabled ? 0.55 : 1,
       })}
     >
       <View
@@ -218,7 +248,15 @@ function StepRow({ step, busy, onPress }: { step: TodayStep; busy: boolean; onPr
         {done && <Ionicons name="checkmark" size={16} color={colors.primaryForeground} />}
       </View>
       <View style={{ flex: 1 }}>
-        <Txt weight="500" style={done && { textDecorationLine: "line-through", color: colors.mutedForeground }}>
+        <Txt
+          weight="500"
+          style={
+            done && {
+              textDecorationLine: "line-through",
+              color: colors.mutedForeground,
+            }
+          }
+        >
           {step.goal.stepTitle}
         </Txt>
         <Txt muted size={12} numberOfLines={1}>
@@ -241,7 +279,12 @@ function FoToast({ message }: { message: FoMessage }) {
   const { colors } = useTheme();
   const y = useRef(new Animated.Value(-80)).current;
   useEffect(() => {
-    Animated.spring(y, { toValue: 0, useNativeDriver: true, damping: 18, stiffness: 220 }).start();
+    Animated.spring(y, {
+      toValue: 0,
+      useNativeDriver: true,
+      damping: 18,
+      stiffness: 220,
+    }).start();
   }, [y]);
   return (
     <Animated.View
@@ -284,7 +327,12 @@ function Celebration({ streak }: { streak: number }) {
   const { colors } = useTheme();
   const scale = useRef(new Animated.Value(0.4)).current;
   useEffect(() => {
-    Animated.spring(scale, { toValue: 1, useNativeDriver: true, damping: 12, stiffness: 200 }).start();
+    Animated.spring(scale, {
+      toValue: 1,
+      useNativeDriver: true,
+      damping: 12,
+      stiffness: 200,
+    }).start();
   }, [scale]);
   return (
     <View

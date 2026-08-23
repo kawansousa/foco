@@ -19,7 +19,12 @@ import { radius, space, useTheme } from "@/lib/theme";
 
 /* ---------- texto ---------- */
 
-type TxtProps = TextProps & { muted?: boolean; size?: number; weight?: "400" | "500" | "600" | "700"; center?: boolean };
+type TxtProps = TextProps & {
+  muted?: boolean;
+  size?: number;
+  weight?: "400" | "500" | "600" | "700";
+  center?: boolean;
+};
 
 export function Txt({ muted, size = 15, weight = "400", center, style, ...rest }: TxtProps) {
   const { colors } = useTheme();
@@ -27,7 +32,12 @@ export function Txt({ muted, size = 15, weight = "400", center, style, ...rest }
     <RNText
       {...rest}
       style={[
-        { color: muted ? colors.mutedForeground : colors.foreground, fontSize: size, fontWeight: weight, lineHeight: size * 1.4 },
+        {
+          color: muted ? colors.mutedForeground : colors.foreground,
+          fontSize: size,
+          fontWeight: weight,
+          lineHeight: size * 1.4,
+        },
         center && { textAlign: "center" },
         style,
       ]}
@@ -125,7 +135,15 @@ export function Button({ title, variant = "primary", loading, icon, size = "md",
       ) : (
         <>
           {icon && <Ionicons name={icon} size={size === "sm" ? 16 : 18} color={fg} />}
-          <RNText style={{ color: fg, fontWeight: "600", fontSize: size === "sm" ? 14 : 16 }}>{title}</RNText>
+          <RNText
+            style={{
+              color: fg,
+              fontWeight: "600",
+              fontSize: size === "sm" ? 14 : 16,
+            }}
+          >
+            {title}
+          </RNText>
         </>
       )}
     </Pressable>
@@ -160,6 +178,51 @@ export function IconButton({
   );
 }
 
+/** Botão flutuante (canto inferior direito da tela). */
+export function Fab({
+  icon = "add",
+  onPress,
+  accessibilityLabel,
+  style,
+}: {
+  icon?: keyof typeof Ionicons.glyphMap;
+  onPress?: () => void;
+  accessibilityLabel: string;
+  style?: StyleProp<ViewStyle>;
+}) {
+  const { colors } = useTheme();
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
+      style={({ pressed }) => [
+        {
+          position: "absolute",
+          right: space.lg,
+          bottom: space.lg,
+          width: 56,
+          height: 56,
+          borderRadius: 999,
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: colors.primary,
+          shadowColor: "#000",
+          shadowOpacity: 0.22,
+          shadowRadius: 12,
+          shadowOffset: { width: 0, height: 6 },
+          elevation: 6,
+          transform: [{ scale: pressed ? 0.94 : 1 }],
+          opacity: pressed ? 0.9 : 1,
+        },
+        style,
+      ]}
+    >
+      <Ionicons name={icon} size={28} color={colors.primaryForeground} />
+    </Pressable>
+  );
+}
+
 /* ---------- formulário ---------- */
 
 export function Label({ children }: { children: ReactNode }) {
@@ -187,7 +250,11 @@ export function Input({ style, ...rest }: TextInputProps) {
           color: colors.foreground,
           backgroundColor: colors.card,
         },
-        rest.multiline && { height: 96, paddingTop: 12, textAlignVertical: "top" },
+        rest.multiline && {
+          height: 96,
+          paddingTop: 12,
+          textAlignVertical: "top",
+        },
         style,
       ]}
     />
@@ -223,7 +290,15 @@ export function Chip({ label, active, onPress }: { label: string; active?: boole
         backgroundColor: active ? colors.primarySoft : colors.card,
       }}
     >
-      <RNText style={{ color: active ? colors.primary : colors.foreground, fontWeight: "500", fontSize: 13 }}>{label}</RNText>
+      <RNText
+        style={{
+          color: active ? colors.primary : colors.foreground,
+          fontWeight: "500",
+          fontSize: 13,
+        }}
+      >
+        {label}
+      </RNText>
     </Pressable>
   );
 }
@@ -245,7 +320,14 @@ export function Switch({ value, onChange }: { value: boolean; onChange: (v: bool
         justifyContent: "center",
       }}
     >
-      <View style={{ width: 22, height: 22, borderRadius: 999, backgroundColor: "#fff" }} />
+      <View
+        style={{
+          width: 22,
+          height: 22,
+          borderRadius: 999,
+          backgroundColor: "#fff",
+        }}
+      />
     </Pressable>
   );
 }
@@ -255,8 +337,23 @@ export function Switch({ value, onChange }: { value: boolean; onChange: (v: bool
 export function ProgressBar({ value, height = 6 }: { value: number; height?: number }) {
   const { colors } = useTheme();
   return (
-    <View style={{ height, borderRadius: 999, backgroundColor: colors.muted, overflow: "hidden", flex: 1 }}>
-      <View style={{ width: `${Math.max(0, Math.min(100, value))}%`, height, borderRadius: 999, backgroundColor: colors.primary }} />
+    <View
+      style={{
+        height,
+        borderRadius: 999,
+        backgroundColor: colors.muted,
+        overflow: "hidden",
+        flex: 1,
+      }}
+    >
+      <View
+        style={{
+          width: `${Math.max(0, Math.min(100, value))}%`,
+          height,
+          borderRadius: 999,
+          backgroundColor: colors.primary,
+        }}
+      />
     </View>
   );
 }
@@ -281,14 +378,7 @@ export function ProgressRing({ value, size = 72, stroke = 7 }: { value: number; 
         strokeDashoffset={c - (c * pct) / 100}
         transform={`rotate(-90 ${size / 2} ${size / 2})`}
       />
-      <SvgText
-        x={size / 2}
-        y={size / 2 + size * 0.07}
-        textAnchor="middle"
-        fontSize={size * 0.22}
-        fontWeight="600"
-        fill={colors.foreground}
-      >
+      <SvgText x={size / 2} y={size / 2 + size * 0.07} textAnchor="middle" fontSize={size * 0.22} fontWeight="600" fill={colors.foreground}>
         {`${Math.round(pct)}%`}
       </SvgText>
     </Svg>
@@ -315,11 +405,37 @@ export function Banner({ kind = "error", children }: { kind?: "error" | "info"; 
   );
 }
 
-export function Empty({ icon, title, text, action }: { icon: keyof typeof Ionicons.glyphMap; title: string; text: string; action?: ReactNode }) {
+export function Empty({
+  icon,
+  title,
+  text,
+  action,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  title: string;
+  text: string;
+  action?: ReactNode;
+}) {
   const { colors } = useTheme();
   return (
-    <View style={{ alignItems: "center", gap: 8, paddingVertical: 40, paddingHorizontal: 24 }}>
-      <View style={{ width: 56, height: 56, borderRadius: 999, backgroundColor: colors.primarySoft, alignItems: "center", justifyContent: "center" }}>
+    <View
+      style={{
+        alignItems: "center",
+        gap: 8,
+        paddingVertical: 40,
+        paddingHorizontal: 24,
+      }}
+    >
+      <View
+        style={{
+          width: 56,
+          height: 56,
+          borderRadius: 999,
+          backgroundColor: colors.primarySoft,
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
         <Ionicons name={icon} size={26} color={colors.primary} />
       </View>
       <Txt weight="600" size={17} center>
@@ -343,5 +459,10 @@ export function Loading() {
 }
 
 const styles = StyleSheet.create({
-  center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
+  center: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 24,
+  },
 });

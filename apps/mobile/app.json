@@ -37,13 +37,22 @@
           "imageWidth": 160,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff",
-          "dark": { "backgroundColor": "#0f1512" }
+          "dark": {
+            "backgroundColor": "#0f1512"
+          }
         }
       ],
       [
         "expo-notifications",
         {
           "color": "#2f9e5a"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "O Foco usa suas fotos para definir a foto de perfil.",
+          "cameraPermission": "O Foco usa a câmera para tirar sua foto de perfil."
         }
       ]
     ],

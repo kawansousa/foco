@@ -1,11 +1,12 @@
 import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
 import { Hono } from "hono";
-import { loginSchema, registerSchema, type AuthResponse, type MeResponse } from "@foco/shared";
+import { loginSchema, registerSchema, updateMeSchema, type AuthResponse, type MeResponse } from "@foco/shared";
 import { db, schema } from "../db";
 import { hashPassword, requireAuth, signToken, verifyPassword, type AuthEnv } from "../lib/auth";
 import { HttpError, parseBody } from "../lib/errors";
 import { toUser } from "../services/mappers";
+import { listEarned } from "../services/trophies";
 import { getSettings, getUser } from "../services/user";
 
 export const authRoutes = new Hono<AuthEnv>();
@@ -22,7 +23,7 @@ authRoutes.post("/auth/register", async (c) => {
     .get();
   db.insert(schema.settings).values({ userId: user.id }).run();
 
-  const body: AuthResponse = { token: await signToken(user.id), user: toUser(user), settings: getSettings(user.id) };
+  const body: AuthResponse = { token: await signToken(user.id), user: toUser(user), settings: getSettings(user.id), trophyCount: 0 };
   return c.json(body, 201);
 });
 
@@ -32,12 +33,27 @@ authRoutes.post("/auth/login", async (c) => {
   if (!user || !(await verifyPassword(input.password, user.passwordHash))) {
     throw new HttpError(401, "E-mail ou senha incorretos.");
   }
-  const body: AuthResponse = { token: await signToken(user.id), user: toUser(user), settings: getSettings(user.id) };
+  const body: AuthResponse = {
+    token: await signToken(user.id),
+    user: toUser(user),
+    settings: getSettings(user.id),
+    trophyCount: listEarned(user.id).length,
+  };
   return c.json(body);
 });
 
-authRoutes.get("/me", requireAuth, (c) => {
+function meResponse(userId: string): MeResponse {
+  return { user: toUser(getUser(userId)), settings: getSettings(userId), trophyCount: listEarned(userId).length };
+}
+
+authRoutes.get("/me", requireAuth, (c) => c.json(meResponse(c.get("userId"))));
+
+authRoutes.patch("/me", requireAuth, async (c) => {
   const userId = c.get("userId");
-  const body: MeResponse = { user: toUser(getUser(userId)), settings: getSettings(userId) };
-  return c.json(body);
+  const input = await parseBody(c, updateMeSchema);
+  const patch: Partial<typeof schema.users.$inferInsert> = {};
+  if (input.name !== undefined) patch.name = input.name;
+  if (input.avatar !== undefined) patch.avatar = input.avatar;
+  if (Object.keys(patch).length > 0) db.update(schema.users).set(patch).where(eq(schema.users.id, userId)).run();
+  return c.json(meResponse(userId));
 });

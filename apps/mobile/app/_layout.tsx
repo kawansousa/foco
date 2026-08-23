@@ -34,6 +34,7 @@ export default function RootLayout() {
             <Stack.Screen name="goals/new" options={{ presentation: "modal", title: "Nova meta" }} />
             <Stack.Screen name="goals/[id]" options={{ title: "Meta" }} />
             <Stack.Screen name="checkin" options={{ presentation: "modal", title: "Como foi?" }} />
+            <Stack.Screen name="profile" options={{ presentation: "modal", title: "Perfil" }} />
           </Stack>
         </AuthProvider>
       </ThemeProvider>

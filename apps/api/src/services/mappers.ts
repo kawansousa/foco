@@ -1,7 +1,7 @@
 import type { Checkin, EarnedTrophy, Goal, Settings, TrophyCode, User } from "@foco/shared";
 import type { CheckinRow, GoalRow, SettingsRow, TrophyRow, UserRow } from "../db/schema";
 
-export const toUser = (u: UserRow): User => ({ id: u.id, name: u.name, email: u.email, createdAt: u.createdAt });
+export const toUser = (u: UserRow): User => ({ id: u.id, name: u.name, email: u.email, avatar: u.avatar ?? null, createdAt: u.createdAt });
 
 export const toSettings = (s: SettingsRow): Settings => ({
   reminderTime: s.reminderTime,
