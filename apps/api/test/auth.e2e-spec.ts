@@ -109,11 +109,11 @@ describe("autenticação", () => {
       await t.http.get("/me").set(bearer(forged)).expect(401);
     });
 
-    it("token de usuário apagado → 404 (não 500)", async () => {
+    it("token de usuário apagado → 401 (conta não existe mais)", async () => {
       const user = await registerUser(t.http);
       await t.prisma.user.delete({ where: { id: user.id } });
-      const res = await t.http.get("/me").set(user.auth).expect(404);
-      expect(res.body).toEqual({ error: "Usuário não encontrado." });
+      const res = await t.http.get("/me").set(user.auth).expect(401);
+      expect(res.body).toEqual({ error: "Faça login para continuar." });
     });
 
     it("todas as rotas de domínio exigem token", async () => {

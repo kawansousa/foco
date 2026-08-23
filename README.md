@@ -92,7 +92,9 @@ apps/api/
   test/                     testes e2e (supertest) com SQLite real isolado por arquivo
 ```
 
-Mudou o schema? `pnpm --filter @foco/api db:migrate:dev --name <nome>` gera a migration e regenera o client. Em produção, `pnpm db:migrate` (`prisma migrate deploy`) antes de subir.
+Mudou o schema? `pnpm --filter @foco/api db:migrate:dev --name <nome>` gera a migration e regenera o client. `pnpm dev:api` e `pnpm --filter @foco/api start` aplicam as migrations pendentes antes de subir (`prisma migrate deploy`).
+
+A API roda TypeScript direto via SWC (`apps/api/register.cjs`, só arquivos `.ts`). Se você usa a extensão **Console Ninja** no VS Code: ela altera `node_modules/@nestjs/core/index.js`; o `register.cjs` já ignora o JS injetado, então não precisa desativá-la.
 
 ### Testes
 

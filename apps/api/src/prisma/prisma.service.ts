@@ -20,6 +20,8 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
 
   async onModuleInit() {
     await this.$connect();
+    // WAL: leituras não bloqueiam escritas (melhor para API + seed/studio abertos ao mesmo tempo)
+    await this.$queryRawUnsafe("PRAGMA journal_mode = WAL");
   }
 
   async onModuleDestroy() {

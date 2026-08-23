@@ -42,17 +42,21 @@ export class CheckinsService {
       throw new BadRequestException("Não dá pra registrar no futuro.");
     }
 
-    const existing = await this.prisma.checkin.findUnique({
+    // Upsert atômico no índice único (meta, dia). `undefined` = "não mexe":
+    // remarcar sem dificuldade mantém a anterior; nota ausente é preservada.
+    const difficulty = input.done ? (input.difficulty ?? undefined) : null;
+    const row = await this.prisma.checkin.upsert({
       where: { goalId_date: { goalId: input.goalId, date: input.date } },
+      create: {
+        userId,
+        goalId: input.goalId,
+        date: input.date,
+        done: input.done,
+        difficulty: difficulty ?? null,
+        note: input.note ?? null,
+      },
+      update: { done: input.done, difficulty, note: input.note },
     });
-    const values = {
-      done: input.done,
-      difficulty: input.done ? (input.difficulty ?? existing?.difficulty ?? null) : null,
-      note: input.note !== undefined ? input.note : (existing?.note ?? null),
-    };
-    const row = existing
-      ? await this.prisma.checkin.update({ where: { id: existing.id }, data: values })
-      : await this.prisma.checkin.create({ data: { userId, goalId: input.goalId, date: input.date, ...values } });
 
     const settings = await this.settings.get(userId);
     const { steps, done, streak } = await this.progress.dayContext(userId, input.date, settings);
@@ -63,7 +67,7 @@ export class CheckinsService {
           kind: "checkin",
           date: input.date,
           goalId: input.goalId,
-          difficulty: values.difficulty,
+          difficulty: row.difficulty,
           localTime: input.localTime,
           streak,
           dayComplete,
@@ -75,7 +79,7 @@ export class CheckinsService {
       newTrophies,
       streak,
       dayComplete,
-      fo: foCheckinReply(values.difficulty, settings.tone, input.done),
+      fo: foCheckinReply(row.difficulty, settings.tone, input.done),
     };
   }
 }

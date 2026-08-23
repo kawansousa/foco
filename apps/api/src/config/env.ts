@@ -19,6 +19,7 @@ const envSchema = z
     /** Caminho absoluto do arquivo SQLite (ou ":memory:"). */
     databasePath: resolveSqlitePath(raw.DATABASE_URL),
     jwtSecret: raw.JWT_SECRET,
+    usingDevJwtSecret: raw.JWT_SECRET === DEV_JWT_SECRET,
     jwtExpiresIn: "90d" as const,
     corsOrigins: raw.CORS_ORIGINS.split(",")
       .map((s) => s.trim())
