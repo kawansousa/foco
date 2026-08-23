@@ -42,6 +42,36 @@ export async function cancelFoReminders() {
   }
 }
 
+async function ensureAndroidChannel() {
+  if (Platform.OS !== "android") return;
+  await Notifications.setNotificationChannelAsync("fo", {
+    name: "Lembretes do Fô",
+    importance: Notifications.AndroidImportance.DEFAULT,
+    lightColor: "#2f9e5a",
+  });
+}
+
+/**
+ * Dispara uma notificação imediata (ex.: "Dia completo!" quando o último
+ * passo do dia é concluído). Aparece também com o app aberto.
+ */
+export async function notifyNow(message: FoMessage): Promise<boolean> {
+  if (Platform.OS === "web") return false;
+  const ok = await ensureNotificationPermission();
+  if (!ok) return false;
+  await ensureAndroidChannel();
+  try {
+    await Notifications.scheduleNotificationAsync({
+      content: { title: message.title, body: message.text, data: { kind: message.kind }, sound: true },
+      trigger:
+        Platform.OS === "android" ? { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: 1, channelId: "fo" } : null,
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Agenda as mensagens do dia como notificações diárias recorrentes
  * (mesmo horário todo dia). Mensagens sem horário são ignoradas.
@@ -51,13 +81,7 @@ export async function scheduleFoReminders(messages: FoMessage[]): Promise<number
   const ok = await ensureNotificationPermission();
   if (!ok) return 0;
 
-  if (Platform.OS === "android") {
-    await Notifications.setNotificationChannelAsync("fo", {
-      name: "Lembretes do Fô",
-      importance: Notifications.AndroidImportance.DEFAULT,
-      lightColor: "#2f9e5a",
-    });
-  }
+  await ensureAndroidChannel();
 
   await cancelFoReminders();
   let count = 0;

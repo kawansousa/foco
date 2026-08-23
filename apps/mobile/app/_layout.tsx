@@ -2,7 +2,7 @@ import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AuthProvider } from "@/lib/auth";
-import { palettes, useTheme } from "@/lib/theme";
+import { ThemeProvider as AppThemeProvider, palettes, useTheme } from "@/lib/theme";
 
 function navTheme(dark: boolean) {
   const p = dark ? palettes.dark : palettes.light;
@@ -14,6 +14,14 @@ function navTheme(dark: boolean) {
 }
 
 export default function RootLayout() {
+  return (
+    <AppThemeProvider>
+      <RootNavigator />
+    </AppThemeProvider>
+  );
+}
+
+function RootNavigator() {
   const { dark, colors } = useTheme();
   return (
     <SafeAreaProvider>
@@ -35,6 +43,7 @@ export default function RootLayout() {
             <Stack.Screen name="goals/[id]" options={{ title: "Meta" }} />
             <Stack.Screen name="checkin" options={{ presentation: "modal", title: "Como foi?" }} />
             <Stack.Screen name="profile" options={{ presentation: "modal", title: "Perfil" }} />
+            <Stack.Screen name="notifications" options={{ title: "Notificações" }} />
           </Stack>
         </AuthProvider>
       </ThemeProvider>

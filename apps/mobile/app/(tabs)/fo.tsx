@@ -1,4 +1,3 @@
-import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
 import { Platform, View } from "react-native";
 import { TONE_LABEL, WEEKDAY_SHORT, isValidTime, todayISO, type FoMessage, type Settings, type Tone } from "@foco/shared";
@@ -8,14 +7,13 @@ import { Banner, Button, Card, Chip, Field, Input, Row, Switch, Txt } from "@/co
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { scheduleFoReminders } from "@/lib/notifications";
-import { space, useTheme } from "@/lib/theme";
+import { space } from "@/lib/theme";
 import { errorMessage } from "@/lib/use-query";
 
 const tones: Tone[] = ["leve", "neutro", "firme"];
 
 export default function Fo() {
-  const { colors } = useTheme();
-  const { user, settings, setSettings, logout } = useAuth();
+  const { settings, setSettings } = useAuth();
   const [form, setForm] = useState<Settings | null>(settings);
   const [preview, setPreview] = useState<FoMessage[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -174,20 +172,6 @@ export default function Fo() {
         </View>
       )}
 
-      <Card style={{ gap: 8 }}>
-        <Row gap={10}>
-          <Ionicons name="person-circle-outline" size={22} color={colors.mutedForeground} />
-          <View style={{ flex: 1 }}>
-            <Txt weight="500" size={14}>
-              {user?.name}
-            </Txt>
-            <Txt muted size={12}>
-              {user?.email}
-            </Txt>
-          </View>
-        </Row>
-        <Button title="Sair da conta" variant="outline" size="sm" icon="log-out-outline" onPress={logout} />
-      </Card>
     </Screen>
   );
 }

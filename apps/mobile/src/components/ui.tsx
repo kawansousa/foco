@@ -223,6 +223,59 @@ export function Fab({
   );
 }
 
+/* ---------- busca e navegação por data ---------- */
+
+export function SearchInput({
+  value,
+  onChangeText,
+  placeholder = "Buscar…",
+  style,
+}: {
+  value: string;
+  onChangeText: (v: string) => void;
+  placeholder?: string;
+  style?: StyleProp<ViewStyle>;
+}) {
+  const { colors } = useTheme();
+  return (
+    <View
+      style={[
+        {
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 8,
+          height: 42,
+          paddingHorizontal: 12,
+          borderRadius: radius.md,
+          borderWidth: 1,
+          borderColor: colors.input,
+          backgroundColor: colors.card,
+        },
+        style,
+      ]}
+    >
+      <Ionicons name="search" size={16} color={colors.mutedForeground} />
+      <TextInput
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        placeholderTextColor={colors.mutedForeground}
+        autoCorrect={false}
+        autoCapitalize="none"
+        returnKeyType="search"
+        clearButtonMode="never"
+        accessibilityLabel={placeholder}
+        style={{ flex: 1, fontSize: 15, color: colors.foreground, paddingVertical: 0 }}
+      />
+      {value.length > 0 && (
+        <Pressable onPress={() => onChangeText("")} hitSlop={8} accessibilityLabel="Limpar busca">
+          <Ionicons name="close-circle" size={18} color={colors.mutedForeground} />
+        </Pressable>
+      )}
+    </View>
+  );
+}
+
 /* ---------- formulário ---------- */
 
 export function Label({ children }: { children: ReactNode }) {

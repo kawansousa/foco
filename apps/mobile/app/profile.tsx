@@ -6,9 +6,9 @@ import { useState } from "react";
 import { Alert, Platform, Pressable, View } from "react-native";
 import { Avatar } from "@/components/avatar";
 import { Screen } from "@/components/screen";
-import { Banner, Button, Card, Field, Input, Row, Txt } from "@/components/ui";
+import { Banner, Button, Card, Chip, Field, Input, Row, Txt } from "@/components/ui";
 import { useAuth } from "@/lib/auth";
-import { radius, space, useTheme } from "@/lib/theme";
+import { THEME_PREF_LABEL, radius, space, useTheme, useThemePref, type ThemePref } from "@/lib/theme";
 import { errorMessage } from "@/lib/use-query";
 
 const AVATAR_PX = 256;
@@ -31,6 +31,7 @@ export default function Profile() {
   const { colors } = useTheme();
   const router = useRouter();
   const { user, trophyCount, updateProfile, logout } = useAuth();
+  const { pref: themePref, setPref: setThemePref } = useThemePref();
   const [name, setName] = useState(user?.name ?? "");
   const [busy, setBusy] = useState<"photo" | "name" | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -222,6 +223,14 @@ export default function Profile() {
         />
       </Field>
       {nameDirty && <Button title="Salvar nome" loading={busy === "name"} onPress={saveName} />}
+
+      <Field label="Aparência" hint="Sistema segue o modo claro/escuro do aparelho.">
+        <Row gap={8}>
+          {(["system", "light", "dark"] as ThemePref[]).map((p) => (
+            <Chip key={p} label={THEME_PREF_LABEL[p]} active={themePref === p} onPress={() => setThemePref(p)} />
+          ))}
+        </Row>
+      </Field>
 
       <View style={{ marginTop: space.lg, gap: space.sm }}>
         <Button
