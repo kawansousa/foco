@@ -7,7 +7,7 @@ export default defineConfig({
   schema: "prisma/schema.prisma",
   migrations: {
     path: "prisma/migrations",
-    seed: "node -r ./register.cjs prisma/seed.ts",
+    seed: "node -r ./swc-register.cjs prisma/seed.ts",
   },
   datasource: {
     url: `file:${resolveSqlitePath(process.env.DATABASE_URL)}`,
