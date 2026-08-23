@@ -1,10 +1,12 @@
 import { Module } from "@nestjs/common";
-import { ConfigModule } from "@nestjs/config";
-import { APP_FILTER } from "@nestjs/core";
+import { ConfigModule, ConfigService } from "@nestjs/config";
+import { APP_FILTER, APP_GUARD, Reflector } from "@nestjs/core";
+import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
 import { AuthModule } from "./auth/auth.module";
 import { CheckinsModule } from "./checkins/checkins.module";
 import { ClockModule } from "./common/clock/clock.module";
 import { ApiExceptionFilter } from "./common/filters/api-exception.filter";
+import { throttlerOptions } from "./common/throttle";
 import { API_ROOT } from "./config/database-url";
 import { validateEnv } from "./config/env";
 import { GoalsModule } from "./goals/goals.module";
@@ -22,6 +24,7 @@ import { WaitlistModule } from "./waitlist/waitlist.module";
       envFilePath: `${API_ROOT}/.env`,
       validate: validateEnv,
     }),
+    ThrottlerModule.forRootAsync({ inject: [ConfigService, Reflector], useFactory: throttlerOptions }),
     ClockModule,
     PrismaModule,
     AuthModule,
@@ -33,6 +36,10 @@ import { WaitlistModule } from "./waitlist/waitlist.module";
     WaitlistModule,
   ],
   controllers: [HealthController],
-  providers: [{ provide: APP_FILTER, useClass: ApiExceptionFilter }],
+  providers: [
+    { provide: APP_FILTER, useClass: ApiExceptionFilter },
+    // Rate limit por IP (antes do guard de auth, que é registrado no AuthModule)
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
+  ],
 })
 export class AppModule {}

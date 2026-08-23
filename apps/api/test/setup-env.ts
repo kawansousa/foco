@@ -16,5 +16,8 @@ if (existsSync(TEMPLATE_DB)) {
   process.env.DATABASE_URL = `file:${dbPath}`;
 }
 process.env.NODE_ENV = "test";
+// Sem rate limit na suíte (test/throttle.e2e-spec.ts baixa esses valores por conta própria)
+process.env.RATE_LIMIT_AUTH_PER_MIN ??= "1000000";
+process.env.RATE_LIMIT_PER_MIN ??= "1000000";
 process.env.CORS_ORIGINS = "";
 delete process.env.PORT;

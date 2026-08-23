@@ -11,6 +11,10 @@ const envSchema = z
     JWT_SECRET: z.string().min(1).default(DEV_JWT_SECRET),
     /** Origens permitidas (CORS), separadas por vírgula. Vazio = todas. */
     CORS_ORIGINS: z.string().default(""),
+    /** Limite por IP e minuto nas rotas de login/cadastro. */
+    RATE_LIMIT_AUTH_PER_MIN: z.coerce.number().int().min(1).default(10),
+    /** Limite por IP e minuto nas demais rotas. */
+    RATE_LIMIT_PER_MIN: z.coerce.number().int().min(1).default(300),
   })
   .transform((raw) => ({
     nodeEnv: raw.NODE_ENV,
@@ -21,6 +25,8 @@ const envSchema = z
     jwtSecret: raw.JWT_SECRET,
     usingDevJwtSecret: raw.JWT_SECRET === DEV_JWT_SECRET,
     jwtExpiresIn: "90d" as const,
+    rateLimitAuthPerMin: raw.RATE_LIMIT_AUTH_PER_MIN,
+    rateLimitPerMin: raw.RATE_LIMIT_PER_MIN,
     corsOrigins: raw.CORS_ORIGINS.split(",")
       .map((s) => s.trim())
       .filter(Boolean),

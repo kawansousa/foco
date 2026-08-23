@@ -26,7 +26,7 @@ export class AuthService {
       email: input.email,
       passwordHash: await this.passwords.hash(input.password),
     });
-    return { token: await this.sign(user.id), user, settings: await this.settings.get(user.id), trophyCount: 0 };
+    return { token: await this.sign(user.id, 0), user, settings: await this.settings.get(user.id), trophyCount: 0 };
   }
 
   async login(input: LoginInput): Promise<AuthResponse> {
@@ -36,7 +36,7 @@ export class AuthService {
       throw new UnauthorizedException("E-mail ou senha incorretos.");
     }
     const [settings, trophyCount] = await Promise.all([this.settings.get(row.id), this.trophies.countEarned(row.id)]);
-    return { token: await this.sign(row.id), user: toUser(row), settings, trophyCount };
+    return { token: await this.sign(row.id, row.tokenVersion), user: toUser(row), settings, trophyCount };
   }
 
   async me(userId: string): Promise<MeResponse> {
@@ -53,7 +53,16 @@ export class AuthService {
     return this.me(userId);
   }
 
-  private sign(userId: string): Promise<string> {
-    return this.jwt.signAsync({}, { subject: userId });
+  /**
+   * "Sair de todos os dispositivos": invalida todos os tokens já emitidos e
+   * devolve um token novo para quem pediu continuar logado.
+   */
+  async logoutAll(userId: string): Promise<{ token: string }> {
+    const version = await this.users.bumpTokenVersion(userId);
+    return { token: await this.sign(userId, version) };
+  }
+
+  private sign(userId: string, version: number): Promise<string> {
+    return this.jwt.signAsync({ ver: version }, { subject: userId });
   }
 }

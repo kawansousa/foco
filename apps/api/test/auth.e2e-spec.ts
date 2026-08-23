@@ -178,4 +178,33 @@ describe("autenticação", () => {
       expect(meB.body.user.name).toBe("Pessoa B");
     });
   });
+
+  describe("POST /auth/logout-all (sair de todos os dispositivos)", () => {
+    it("invalida os tokens antigos e devolve um novo válido", async () => {
+      const user = await registerUser(t.http);
+      const login = await t.http.post("/auth/login").send({ email: user.email, password: "senha-forte-123" }).expect(200);
+      const otherDevice = login.body.token as string;
+
+      const res = await t.http.post("/auth/logout-all").set(user.auth).expect(200);
+      const fresh = res.body.token as string;
+      expect(fresh).toEqual(expect.any(String));
+      expect(fresh).not.toBe(user.token);
+
+      await t.http.get("/me").set(user.auth).expect(401);
+      await t.http.get("/me").set(bearer(otherDevice)).expect(401);
+      await t.http.get("/me").set(bearer(fresh)).expect(200);
+
+      // login depois disso também gera token válido
+      const again = await t.http.post("/auth/login").send({ email: user.email, password: "senha-forte-123" }).expect(200);
+      await t.http.get("/me").set(bearer(again.body.token)).expect(200);
+    });
+
+    it("token sem versão (emitido antes do recurso) continua válido até o primeiro logout-all", async () => {
+      const user = await registerUser(t.http);
+      const legacy = await t.app.get(JwtService).signAsync({}, { subject: user.id, expiresIn: "1h" });
+      await t.http.get("/me").set(bearer(legacy)).expect(200);
+      await t.http.post("/auth/logout-all").set(user.auth).expect(200);
+      await t.http.get("/me").set(bearer(legacy)).expect(401);
+    });
+  });
 });

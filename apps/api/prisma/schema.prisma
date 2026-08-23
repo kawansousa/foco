@@ -26,6 +26,8 @@ model User {
   passwordHash String   @map("password_hash")
   /// foto de perfil: data URL pequena (image/jpeg;base64) ou null
   avatar       String?
+  /// incrementado em "sair de todos os dispositivos": tokens com `ver` antigo deixam de valer
+  tokenVersion Int      @default(0) @map("token_version")
   createdAt    DateTime @default(now()) @map("created_at")
 
   settings Settings?

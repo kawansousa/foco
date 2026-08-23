@@ -10,7 +10,7 @@ import {
   type ISODate,
   type UpdateGoalInput,
 } from "@foco/shared";
-import { findCheckins } from "../checkins/checkins.query";
+import { findCheckins, findDoneCheckins } from "../checkins/checkins.query";
 import { Clock } from "../common/clock/clock";
 import { toGoal } from "../common/mappers";
 import type { Goal as GoalRow } from "../generated/prisma/client";
@@ -41,7 +41,7 @@ export class GoalsService {
   async listWithProgress(userId: string, today: ISODate, status?: GoalStatus): Promise<GoalWithProgress[]> {
     const [goals, checkins, settings] = await Promise.all([
       this.list(userId),
-      findCheckins(this.prisma, userId),
+      findDoneCheckins(this.prisma, userId),
       this.settings.get(userId),
     ]);
     return goals
@@ -142,7 +142,7 @@ export class GoalsService {
   private async withProgress(userId: string, row: GoalRow): Promise<GoalWithProgress> {
     const goal = toGoal(row);
     const [checkins, settings] = await Promise.all([
-      findCheckins(this.prisma, userId, { goalId: goal.id }),
+      findDoneCheckins(this.prisma, userId, { goalId: goal.id }),
       this.settings.get(userId),
     ]);
     return { ...goal, progress: goalProgress(goal, checkins, this.clock.todayISO(), settings.restDays) };

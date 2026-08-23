@@ -12,8 +12,19 @@ export class UsersService {
     return this.prisma.user.findUnique({ where: { email } });
   }
 
-  async exists(userId: string): Promise<boolean> {
-    return (await this.prisma.user.count({ where: { id: userId } })) > 0;
+  /** Dados mínimos para validar um token: existe? qual a versão vigente? */
+  async findAuthState(userId: string): Promise<{ tokenVersion: number } | null> {
+    return this.prisma.user.findUnique({ where: { id: userId }, select: { tokenVersion: true } });
+  }
+
+  /** Invalida todos os tokens emitidos até agora; devolve a nova versão. */
+  async bumpTokenVersion(userId: string): Promise<number> {
+    const row = await this.prisma.user.update({
+      where: { id: userId },
+      data: { tokenVersion: { increment: 1 } },
+      select: { tokenVersion: true },
+    });
+    return row.tokenVersion;
   }
 
   /** Usuário público (sem hash de senha). 404 se o token apontar para alguém apagado. */

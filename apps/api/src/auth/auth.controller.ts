@@ -1,4 +1,5 @@
 import { Body, Controller, Get, HttpCode, HttpStatus, Patch, Post } from "@nestjs/common";
+import { StrictThrottle } from "../common/throttle";
 import {
   loginSchema,
   registerSchema,
@@ -19,16 +20,24 @@ export class AuthController {
   constructor(private readonly auth: AuthService) {}
 
   @Public()
+  @StrictThrottle()
   @Post("auth/register")
   register(@Body(new ZodValidationPipe(registerSchema)) input: RegisterInput): Promise<AuthResponse> {
     return this.auth.register(input);
   }
 
   @Public()
+  @StrictThrottle()
   @Post("auth/login")
   @HttpCode(HttpStatus.OK)
   login(@Body(new ZodValidationPipe(loginSchema)) input: LoginInput): Promise<AuthResponse> {
     return this.auth.login(input);
+  }
+
+  @Post("auth/logout-all")
+  @HttpCode(HttpStatus.OK)
+  logoutAll(@CurrentUser() userId: string): Promise<{ token: string }> {
+    return this.auth.logoutAll(userId);
   }
 
   @Get("me")

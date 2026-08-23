@@ -64,6 +64,7 @@ Autenticação por `Authorization: Bearer <token>` (JWT). Datas são `YYYY-MM-DD
 
 ```
 POST /auth/register {name,email,password}     POST /auth/login {email,password}     GET|PATCH /me
+POST /auth/logout-all  (invalida todos os tokens; devolve um novo para quem chamou)
 GET  /goals?date=   POST /goals   GET|PATCH|DELETE /goals/:id   POST /goals/:id/complete
 GET  /today?date=                              PUT /checkins {goalId,date,done,difficulty?,note?,localTime?}
 GET  /checkins?from&to&goalId
@@ -73,7 +74,7 @@ GET  /stats?date=   GET /fo/schedule?date=
 POST /waitlist {email,source?}                 GET /health
 ```
 
-Variáveis (`apps/api/.env.example`): `PORT`, `DATABASE_URL`, `JWT_SECRET` (obrigatório em produção), `CORS_ORIGINS`.
+Variáveis (`apps/api/.env.example`): `PORT`, `DATABASE_URL`, `JWT_SECRET` (obrigatório em produção), `CORS_ORIGINS`, `RATE_LIMIT_AUTH_PER_MIN` / `RATE_LIMIT_PER_MIN` (limite por IP e minuto; login/cadastro 10, demais 300).
 
 ### Estrutura (NestJS)
 
