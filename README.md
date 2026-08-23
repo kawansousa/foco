@@ -74,7 +74,7 @@ GET  /stats?date=   GET /fo/schedule?date=
 POST /waitlist {email,source?}                 GET /health
 ```
 
-Variáveis (`apps/api/.env.example`): `PORT`, `DATABASE_URL`, `JWT_SECRET` (obrigatório em produção), `CORS_ORIGINS`, `RATE_LIMIT_AUTH_PER_MIN` / `RATE_LIMIT_PER_MIN` (limite por IP e minuto; login/cadastro 10, demais 300).
+Variáveis (`apps/api/.env.example`): `PORT`, `DATABASE_URL`, `JWT_SECRET` (obrigatório em produção), `CORS_ORIGINS`, `RATE_LIMIT_AUTH_PER_MIN` / `RATE_LIMIT_PER_MIN` (por IP e minuto: login+cadastro somam num balde só, padrão 10; demais rotas 300 por rota) e `TRUST_PROXY` (obrigatório atrás de proxy reverso para o limite valer por cliente, ex.: `TRUST_PROXY=1`). Contadores em memória, por processo — com réplicas, usar um storage compartilhado.
 
 ### Estrutura (NestJS)
 

@@ -82,6 +82,8 @@ export function createFocoClient(opts: ClientOptions) {
       register: (input: RegisterInput) => request<AuthResponse>("POST", "/auth/register", input),
       login: (input: LoginInput) => request<AuthResponse>("POST", "/auth/login", input),
       me: () => request<MeResponse>("GET", "/me"),
+      /** Invalida todos os tokens emitidos; guarde o token novo devolvido. */
+      logoutAll: () => request<{ token: string }>("POST", "/auth/logout-all"),
       updateMe: (input: UpdateMeInput) => request<MeResponse>("PATCH", "/me", input),
     },
 

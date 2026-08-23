@@ -12,11 +12,15 @@ export const JSON_BODY_LIMIT = "1mb";
  */
 export function configureApp(app: NestExpressApplication): NestExpressApplication {
   const config = app.get(ConfigService<Env, true>);
+  const trustProxy = config.get("trustProxy", { infer: true });
+  if (trustProxy !== undefined) app.set("trust proxy", trustProxy);
   app.useBodyParser("json", { limit: JSON_BODY_LIMIT });
   const origins = config.get("corsOrigins", { infer: true });
   app.enableCors({
     origin: origins.length ? origins : "*",
     allowedHeaders: ["Authorization", "Content-Type"],
+    // sem isso, JS cross-origin não lê o Retry-After dos 429 (não é header safelisted)
+    exposedHeaders: ["Retry-After"],
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   });
   app.enableShutdownHooks();

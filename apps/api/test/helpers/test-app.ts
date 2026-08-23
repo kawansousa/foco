@@ -4,7 +4,6 @@ import { ConfigService } from "@nestjs/config";
 import { Test } from "@nestjs/testing";
 import request, { type Agent } from "supertest";
 import type { CreateGoalInput, RegisterInput } from "@foco/shared";
-import { AppModule } from "../../src/app.module";
 import { configureApp } from "../../src/app.setup";
 import { Clock } from "../../src/common/clock/clock";
 import type { Env } from "../../src/config/env";
@@ -24,11 +23,17 @@ export type TestApp = {
 };
 
 /**
- * Sobe a aplicação inteira (módulos, guard, filtro, CORS) contra o banco
+ * Sobe a aplicação inteira (módulos, guards, filtro, CORS) contra o banco
  * SQLite exclusivo deste arquivo de teste (preparado em `test/setup-env.ts`),
  * com o relógio congelado.
+ *
+ * `env` sobrescreve variáveis ANTES de o AppModule ser importado — necessário
+ * porque `ConfigModule.forRoot()` lê `process.env` no momento do import.
  */
-export async function createTestApp(): Promise<TestApp> {
+export async function createTestApp(opts: { env?: Record<string, string> } = {}): Promise<TestApp> {
+  for (const [k, v] of Object.entries(opts.env ?? {})) process.env[k] = v;
+  const { AppModule } = await import("../../src/app.module");
+
   const clock = new FixedClock();
   const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
     .overrideProvider(Clock)

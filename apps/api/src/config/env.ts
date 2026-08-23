@@ -11,6 +11,12 @@ const envSchema = z
     JWT_SECRET: z.string().min(1).default(DEV_JWT_SECRET),
     /** Origens permitidas (CORS), separadas por vírgula. Vazio = todas. */
     CORS_ORIGINS: z.string().default(""),
+    /**
+     * Atrás de proxy reverso: quantos saltos confiar para o IP real
+     * (ex.: 1) ou "true"/"loopback" — vira o `trust proxy` do Express.
+     * Vazio = desligado (padrão; correto quando a API é exposta direto).
+     */
+    TRUST_PROXY: z.string().default(""),
     /** Limite por IP e minuto nas rotas de login/cadastro. */
     RATE_LIMIT_AUTH_PER_MIN: z.coerce.number().int().min(1).default(10),
     /** Limite por IP e minuto nas demais rotas. */
@@ -25,6 +31,7 @@ const envSchema = z
     jwtSecret: raw.JWT_SECRET,
     usingDevJwtSecret: raw.JWT_SECRET === DEV_JWT_SECRET,
     jwtExpiresIn: "90d" as const,
+    trustProxy: parseTrustProxy(raw.TRUST_PROXY),
     rateLimitAuthPerMin: raw.RATE_LIMIT_AUTH_PER_MIN,
     rateLimitPerMin: raw.RATE_LIMIT_PER_MIN,
     corsOrigins: raw.CORS_ORIGINS.split(",")
@@ -36,6 +43,15 @@ const envSchema = z
   });
 
 export type Env = z.infer<typeof envSchema>;
+
+/** "" → desligado; "true"/"false" → booleano; número → saltos; resto → repassado (ex.: "loopback"). */
+function parseTrustProxy(raw: string): boolean | number | string | undefined {
+  const v = raw.trim();
+  if (!v) return undefined;
+  if (v === "true") return true;
+  if (v === "false") return false;
+  return /^\d+$/.test(v) ? Number(v) : v;
+}
 
 /**
  * Valida as variáveis de ambiente e falha cedo (na subida) se algo estiver errado.

@@ -3,6 +3,7 @@ import type { ConfigService } from "@nestjs/config";
 import type { Reflector } from "@nestjs/core";
 import type { ThrottlerModuleOptions } from "@nestjs/throttler";
 import type { Env } from "../config/env";
+import { MemoryThrottlerStorage } from "./throttle-storage";
 
 const STRICT_THROTTLE_KEY = "strictThrottle";
 
@@ -10,20 +11,30 @@ const STRICT_THROTTLE_KEY = "strictThrottle";
 export const StrictThrottle = () => SetMetadata(STRICT_THROTTLE_KEY, true);
 
 /**
- * Um único limitador por IP, janela de 1 minuto. O limite é resolvido por
- * rota: estrito nas marcadas com `@StrictThrottle()`, folgado nas demais.
+ * Limitador por IP, janela de 1 minuto:
+ *  - rotas com `@StrictThrottle()` compartilham UM balde por IP (login + cadastro
+ *    somam no mesmo limite `RATE_LIMIT_AUTH_PER_MIN`);
+ *  - as demais têm `RATE_LIMIT_PER_MIN` por IP e por rota.
+ *
+ * Atrás de proxy reverso, configure `TRUST_PROXY` para o `req.ip` ser o do
+ * cliente real (senão todo mundo divide o mesmo balde do IP do proxy).
  */
 export function throttlerOptions(config: ConfigService<Env, true>, reflector: Reflector): ThrottlerModuleOptions {
-  const strict = config.get("rateLimitAuthPerMin", { infer: true });
-  const general = config.get("rateLimitPerMin", { infer: true });
+  const strictLimit = config.get("rateLimitAuthPerMin", { infer: true });
+  const generalLimit = config.get("rateLimitPerMin", { infer: true });
+  const isStrict = (ctx: ExecutionContext) =>
+    reflector.getAllAndOverride<boolean>(STRICT_THROTTLE_KEY, [ctx.getHandler(), ctx.getClass()]) === true;
+
   return {
+    storage: new MemoryThrottlerStorage(),
+    errorMessage: "Muitas tentativas. Aguarde um minuto e tente de novo.",
     throttlers: [
       {
         ttl: 60_000,
-        limit: (ctx: ExecutionContext) =>
-          reflector.getAllAndOverride<boolean>(STRICT_THROTTLE_KEY, [ctx.getHandler(), ctx.getClass()]) ? strict : general,
+        limit: (ctx) => (isStrict(ctx) ? strictLimit : generalLimit),
+        generateKey: (ctx, trackerIp, name) =>
+          isStrict(ctx) ? `auth:${trackerIp}:${name}` : `${ctx.getClass().name}.${ctx.getHandler().name}:${trackerIp}:${name}`,
       },
     ],
-    errorMessage: "Muitas tentativas. Aguarde um minuto e tente de novo.",
   };
 }
