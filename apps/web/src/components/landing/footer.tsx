@@ -9,7 +9,6 @@ export function Footer() {
           Foco
         </div>
         <nav className="flex gap-6">
-          <a href="#como-funciona" className="hover:text-foreground">Como funciona</a>
           <a href="#recursos" className="hover:text-foreground">Recursos</a>
           <a href="#trofeus" className="hover:text-foreground">Troféus</a>
           <a href="#fo" className="hover:text-foreground">Fô</a>
