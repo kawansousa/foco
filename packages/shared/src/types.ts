@@ -118,7 +118,7 @@ export type StatsResponse = {
   trophiesEarned: number;
   /** dificuldade média (1–5) dos últimos 30 dias, ou null */
   avgDifficulty: number | null;
-  /** últimos 30 dias, do mais antigo ao mais novo */
+  /** janela (padrão: últimos 30 dias), do mais antigo ao mais novo */
   consistency: DayStat[];
   /** taxa de conclusão por dia da semana (0 = dom) */
   weekdays: { weekday: number; rate: number; samples: number }[];

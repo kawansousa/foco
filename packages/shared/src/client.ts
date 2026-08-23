@@ -114,7 +114,7 @@ export function createFocoClient(opts: ClientOptions) {
       update: (input: UpdateSettingsInput) => request<Settings>("PUT", "/settings", input),
     },
 
-    stats: (date?: ISODate) => request<StatsResponse>("GET", `/stats${q({ date })}`),
+    stats: (date?: ISODate, from?: ISODate) => request<StatsResponse>("GET", `/stats${q({ date, from })}`),
 
     fo: {
       schedule: (date?: ISODate) => request<{ date: ISODate; messages: FoMessage[] }>("GET", `/fo/schedule${q({ date })}`),

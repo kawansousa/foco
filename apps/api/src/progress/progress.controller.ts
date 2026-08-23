@@ -1,7 +1,7 @@
-import { Controller, Get, Query } from "@nestjs/common";
-import type { FoMessage, ISODate, StatsResponse, TodayResponse } from "@foco/shared";
+import { BadRequestException, Controller, Get, Query } from "@nestjs/common";
+import { diffDays, type FoMessage, type ISODate, type StatsResponse, type TodayResponse } from "@foco/shared";
 import { CurrentUser } from "../common/auth/current-user.decorator";
-import { DateQueryPipe } from "../common/pipes/iso-date.pipe";
+import { DateQueryPipe, OptionalDateQueryPipe } from "../common/pipes/iso-date.pipe";
 import { ProgressService } from "./progress.service";
 
 /** Leituras compostas do dia: `/today`, `/fo/schedule` e `/stats`. */
@@ -22,8 +22,16 @@ export class ProgressController {
     return { date, messages: await this.progress.foSchedule(userId, date) };
   }
 
+  /** `from` opcional define o início da janela (máx. 366 dias até `date`); padrão: 30 dias. */
   @Get("stats")
-  stats(@CurrentUser() userId: string, @Query("date", DateQueryPipe) date: ISODate): Promise<StatsResponse> {
-    return this.progress.stats(userId, date);
+  stats(
+    @CurrentUser() userId: string,
+    @Query("date", DateQueryPipe) date: ISODate,
+    @Query("from", OptionalDateQueryPipe) from?: ISODate,
+  ): Promise<StatsResponse> {
+    if (from && (from > date || diffDays(from, date) > 365)) {
+      throw new BadRequestException({ error: "Período inválido: `from` deve ser até `date`, no máximo 366 dias." });
+    }
+    return this.progress.stats(userId, date, from);
   }
 }

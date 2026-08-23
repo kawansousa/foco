@@ -107,8 +107,9 @@ export function computeStats(
   checkins: DoneCheckin[],
   today: ISODate,
   restDays: number[],
-  extra: { trophiesEarned: number },
+  extra: { trophiesEarned: number; /** início da janela (padrão: 30 dias até `today`) */ from?: ISODate },
 ): StatsResponse {
+  const from = extra.from && extra.from <= today ? extra.from : addDays(today, -29);
   const done = checkins.filter((c) => c.done);
   const byDate = new Map<ISODate, DoneCheckin[]>();
   for (const c of done) {
@@ -123,7 +124,7 @@ export function computeStats(
     return { date, done: Math.min(d, Math.max(total, d)), total, rest: isRestDay(date, restDays) };
   };
 
-  const consistency = eachDay(addDays(today, -29), today).map(dayStat);
+  const consistency = eachDay(from, today).map(dayStat);
 
   // dias fortes: últimas 12 semanas
   const buckets = Array.from({ length: 7 }, () => ({ done: 0, total: 0, samples: 0 }));
@@ -145,8 +146,8 @@ export function computeStats(
     ? withSamples.reduce((a, b) => (b.rate > a.rate ? b : a)).weekday
     : null;
 
-  // dificuldade média (30 dias)
-  const recent = done.filter((c) => c.date >= addDays(today, -29) && c.difficulty != null);
+  // dificuldade média (janela)
+  const recent = done.filter((c) => c.date >= from && c.date <= today && c.difficulty != null);
   const avgDifficulty = recent.length
     ? Math.round((recent.reduce((s, c) => s + (c.difficulty ?? 0), 0) / recent.length) * 10) / 10
     : null;
@@ -165,7 +166,7 @@ export function computeStats(
   return {
     streak: currentStreak(checkins, today, restDays),
     bestStreak: bestStreak(checkins, today, restDays),
-    totalDone: done.length,
+    totalDone: done.filter((c) => c.date >= from && c.date <= today).length,
     activeGoals: goals.filter((g) => g.status === "active").length,
     trophiesEarned: extra.trophiesEarned,
     avgDifficulty,

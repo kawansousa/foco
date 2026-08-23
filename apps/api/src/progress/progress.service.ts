@@ -95,13 +95,13 @@ export class ProgressService {
     return messages;
   }
 
-  async stats(userId: string, today: ISODate): Promise<StatsResponse> {
+  async stats(userId: string, today: ISODate, from?: ISODate): Promise<StatsResponse> {
     const [goals, checkins, settings, trophiesEarned] = await Promise.all([
       this.goals.list(userId),
       findCheckins(this.prisma, userId),
       this.settings.get(userId),
       this.trophies.countEarned(userId),
     ]);
-    return computeStats(goals, checkins, today, settings.restDays, { trophiesEarned });
+    return computeStats(goals, checkins, today, settings.restDays, { trophiesEarned, from });
   }
 }
