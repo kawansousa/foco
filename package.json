@@ -10,6 +10,8 @@
     "build": "pnpm --filter @foco/web --filter @foco/api build",
     "typecheck": "pnpm -r typecheck",
     "lint": "pnpm -r lint",
-    "db:push": "pnpm --filter @foco/api db:push"
+    "test": "pnpm --filter @foco/api test",
+    "db:migrate": "pnpm --filter @foco/api db:migrate",
+    "seed": "pnpm --filter @foco/api seed"
   }
 }

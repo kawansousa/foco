@@ -23,8 +23,10 @@ web-build/
 apps/mobile/ios/
 apps/mobile/android/
 
-# api (banco SQLite local)
+# api (banco SQLite local, client gerado pelo Prisma, bancos de teste)
 apps/api/data/
+apps/api/src/generated/
+apps/api/.tmp-test/
 *.db
 *.db-journal
 *.sqlite

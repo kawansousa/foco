@@ -1,0 +1,119 @@
+// Modelo de dados do Foco.
+//
+// Datas de calendário (startDate, dueDate, Checkin.date, Trophy.date) são
+// strings `YYYY-MM-DD` no fuso LOCAL do usuário — o cliente decide qual é
+// "hoje" e a API só compara strings. Instantes (createdAt etc.) são DateTime.
+//
+// SQLite não tem enum nem JSON nativos no Prisma: `status`, `tone` e
+// `restDays` (JSON de number[]) são strings validadas na aplicação.
+
+generator client {
+  provider            = "prisma-client"
+  output              = "../src/generated/prisma"
+  runtime             = "nodejs"
+  moduleFormat        = "cjs"
+  importFileExtension = ""
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id           String   @id @default(uuid())
+  name         String
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  settings Settings?
+  goals    Goal[]
+  checkins Checkin[]
+  trophies Trophy[]
+
+  @@map("users")
+}
+
+model Settings {
+  userId             String  @id @map("user_id")
+  reminderTime       String  @default("08:00") @map("reminder_time")
+  middayTime         String  @default("13:00") @map("midday_time")
+  streakAlertTime    String  @default("20:00") @map("streak_alert_time")
+  tone               String  @default("leve")
+  celebrateTrophies  Boolean @default(true) @map("celebrate_trophies")
+  quietOnRestDays    Boolean @default(true) @map("quiet_on_rest_days")
+  /// JSON: number[] (0 = domingo … 6 = sábado)
+  restDays           String  @default("[]") @map("rest_days")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("settings")
+}
+
+model Goal {
+  id           String    @id @default(uuid())
+  userId       String    @map("user_id")
+  title        String
+  stepTitle    String    @map("step_title")
+  description  String?
+  startDate    String    @map("start_date")
+  dueDate      String?   @map("due_date")
+  reminderTime String?   @map("reminder_time")
+  /// active | done | archived
+  status       String    @default("active")
+  completedAt  DateTime? @map("completed_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  checkins Checkin[]
+  trophies Trophy[]
+
+  @@index([userId, status])
+  @@map("goals")
+}
+
+model Checkin {
+  id         String   @id @default(uuid())
+  userId     String   @map("user_id")
+  goalId     String   @map("goal_id")
+  date       String
+  done       Boolean  @default(false)
+  difficulty Int?
+  note       String?
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @default(now()) @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  goal Goal @relation(fields: [goalId], references: [id], onDelete: Cascade)
+
+  @@unique([goalId, date])
+  @@index([userId, date])
+  @@map("checkins")
+}
+
+model Trophy {
+  id       String   @id @default(uuid())
+  userId   String   @map("user_id")
+  code     String
+  goalId   String?  @map("goal_id")
+  /// goalId para troféus por meta, "" para os globais — permite índice único simples
+  scopeKey String   @default("") @map("scope_key")
+  date     String
+  earnedAt DateTime @default(now()) @map("earned_at")
+  note     String?
+
+  user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  goal Goal? @relation(fields: [goalId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, code, scopeKey])
+  @@map("trophies")
+}
+
+model WaitlistEntry {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  source    String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("waitlist")
+}
