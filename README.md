@@ -1,36 +1,58 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Foco — landing page + app web
 
-## Getting Started
+Landing page do **Foco**: app de metas com prazo, check-in diário, diário de dificuldade, troféus e lembretes com o avatar **Fô**.
 
-First, run the development server:
+O Foco é um app de celular; a mesma interface também roda na web em **`/app`** — no desktop ela aparece dentro de um iPhone (`IPhoneMockup`), e num celular de verdade ocupa a tela toda.
+
+## Stack
+
+- Next.js 16 (App Router) + React 19 + TypeScript
+- Tailwind CSS v4 com tema shadcn/ui em `oklch` (light/dark via `next-themes`)
+- `motion` (Framer Motion) para animações
+- `lucide-react` para ícones
+
+## Rodando
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
+pnpm dev      # http://localhost:3000
+pnpm build    # build de produção
+pnpm lint
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Estrutura
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```
+src/
+  app/
+    globals.css          # tokens de tema (oklch) + utilitários
+    layout.tsx           # fontes, metadata, ThemeProvider
+    page.tsx             # composição das seções da landing
+    app/page.tsx         # versão web do app (/app)
+  components/
+    app/
+      app-shell.tsx      # telas do app + barra de abas (Hoje, Metas, Troféus, Fô)
+      today-screen.tsx   # tela "Hoje" (usada no app e na hero da landing)
+      phone-frame.tsx    # iPhone no desktop / tela cheia no celular
+    avatar/fo-avatar.tsx # mascote Fô (SVG animado, 5 expressões)
+    landing/             # navbar, hero, how-it-works, features,
+                         # checkin-demo, trophies, fo-section, cta, footer
+    theme-toggle.tsx     # botão light/dark
+    ui/                  # button, badge, card, iphone-mockup (estilo shadcn)
+  lib/utils.ts           # cn()
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## shadcn/ui
 
-## Learn More
+O projeto segue a estrutura do shadcn (`components.json` na raiz, componentes em `src/components/ui`, `cn()` em `src/lib/utils.ts`). Para adicionar componentes:
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+pnpm dlx shadcn@latest add dialog
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Personalizando
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Cores: edite as variáveis em `src/app/globals.css` (`:root` e `.dark`).
+- Nome/textos: cada seção em `src/components/landing/*` tem seus textos inline.
+- iPhone da web: `model`, `color` e `scale` em `src/components/app/phone-frame.tsx` (modelos: `14`, `14-pro`, `15`, `15-pro`, `x`, `plain`).
+- Avatar: `src/components/avatar/fo-avatar.tsx` — `mood` aceita `happy | wave | celebrate | sleepy | thinking`.
