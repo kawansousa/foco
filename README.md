@@ -4,7 +4,7 @@ App de metas com prazo, check-in diário, diário de dificuldade, troféus e lem
 
 ```
 apps/
-  api/       API HTTP (Hono + Drizzle/SQLite) usada pelo app e pelo site
+  api/       API HTTP (NestJS + Prisma/SQLite) usada pelo app e pelo site
   mobile/    App de celular (Expo + expo-router, iOS/Android)
   web/       Site/landing (Next.js 16)
 packages/
@@ -19,7 +19,7 @@ Pré-requisitos: Node 20+, pnpm 9 (`corepack enable`), e para o celular o app **
 ```bash
 pnpm install
 
-# 1) API — http://localhost:4000 (cria apps/api/data/foco.db sozinha)
+# 1) API — http://localhost:4000 (aplica as migrations e cria apps/api/data/foco.db sozinha)
 pnpm dev:api
 
 # opcional: usuário de demonstração com metas e histórico
@@ -54,7 +54,7 @@ O site usa `NEXT_PUBLIC_API_URL` (`apps/web/.env.local`), padrão `http://localh
 | Progresso: constância, dificuldade média, dias fortes | `GET /stats`, aba **Progresso** |
 | Lista de espera do site | `POST /waitlist` (formulário da landing) |
 
-Regras de troféu (`apps/api/src/services/trophies.ts`): Primeiro passo, 7 dias seguidos, Superação (dia 5/5), Mês inteiro (30), Meta batida (concluída no prazo), Sem folga (todos os passos do dia), 100 dias e um troféu secreto.
+Regras de troféu (`apps/api/src/trophies/trophy-rules.ts`): Primeiro passo, 7 dias seguidos, Superação (dia 5/5), Mês inteiro (30), Meta batida (concluída no prazo), Sem folga (todos os passos do dia), 100 dias e um troféu secreto.
 
 Sequência e progresso são funções puras em `packages/shared/src/progress.ts` — dias de descanso não quebram a sequência.
 
@@ -63,7 +63,7 @@ Sequência e progresso são funções puras em `packages/shared/src/progress.ts`
 Autenticação por `Authorization: Bearer <token>` (JWT). Datas são `YYYY-MM-DD` no fuso do cliente (mande `?date=` nas rotas de leitura).
 
 ```
-POST /auth/register {name,email,password}     POST /auth/login {email,password}     GET /me
+POST /auth/register {name,email,password}     POST /auth/login {email,password}     GET|PATCH /me
 GET  /goals?date=   POST /goals   GET|PATCH|DELETE /goals/:id   POST /goals/:id/complete
 GET  /today?date=                              PUT /checkins {goalId,date,done,difficulty?,note?,localTime?}
 GET  /checkins?from&to&goalId
@@ -75,13 +75,42 @@ POST /waitlist {email,source?}                 GET /health
 
 Variáveis (`apps/api/.env.example`): `PORT`, `DATABASE_URL`, `JWT_SECRET` (obrigatório em produção), `CORS_ORIGINS`.
 
-Migrations: `pnpm --filter @foco/api db:generate` após mudar `src/db/schema.ts`; elas rodam sozinhas ao subir a API.
+### Estrutura (NestJS)
+
+```
+apps/api/
+  prisma/schema.prisma      modelo de dados + migrations (prisma/migrations)
+  prisma/seed.ts            usuário demo (passa pelos serviços da API)
+  src/
+    main.ts, app.module.ts, app.setup.ts   bootstrap (CORS, guard global, filtro de erros)
+    config/                 env validado com zod (falha cedo), caminho do SQLite
+    prisma/                 PrismaService (driver adapter better-sqlite3)
+    common/                 Clock injetável, guard JWT + @Public/@CurrentUser,
+                            ZodValidationPipe (schemas do @foco/shared), filtro { error, issues }
+    auth/ users/ settings/ goals/ checkins/ trophies/ progress/ waitlist/ health/
+                            um módulo por domínio: controller (HTTP) + service (regras)
+  test/                     testes e2e (supertest) com SQLite real isolado por arquivo
+```
+
+Mudou o schema? `pnpm --filter @foco/api db:migrate:dev --name <nome>` gera a migration e regenera o client. Em produção, `pnpm db:migrate` (`prisma migrate deploy`) antes de subir.
+
+### Testes
+
+```bash
+pnpm test                               # unitários + e2e
+pnpm --filter @foco/api test:watch
+pnpm --filter @foco/api test:cov        # cobertura (threshold mínimo configurado)
+```
+
+- Unitários (`src/**/*.spec.ts`): regras de troféu, hash de senha, pipes, filtro de erros, mappers, validação de env.
+- E2E (`test/*.e2e-spec.ts`): sobem a aplicação inteira contra uma cópia própria de um banco SQLite migrado (nunca tocam em `data/foco.db`), com relógio congelado (`Clock`) para testar regras de data. Cobrem cada rota e regra: isolamento entre usuários (404, nunca vaza), validações (400 com `issues`), idempotência do check-in, troféus (sem duplicar, por meta, sequência com dias de descanso), mensagens do Fô, estatísticas, lista de espera.
 
 ## Scripts úteis
 
 ```bash
 pnpm typecheck        # todos os pacotes
-pnpm build            # site + API
+pnpm build            # site + typecheck da API
+pnpm test             # testes da API
 pnpm --filter @foco/web lint
 ```
 
