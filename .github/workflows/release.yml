@@ -1,0 +1,62 @@
+name: Release
+
+# Publica uma release ao empurrar uma tag `v*` (ex.: v0.1.0):
+#   git tag v0.1.0 && git push origin v0.1.0
+# Gera e anexa o APK Android (assinado com a keystore de debug — bom para
+# demonstração/instalação direta; para loja, usar EAS Build).
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Testes + APK + GitHub Release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Instalar dependências
+        run: pnpm install --frozen-lockfile
+
+      - name: Testes da API
+        run: pnpm test
+
+      - name: Gerar projeto Android (expo prebuild)
+        working-directory: apps/mobile
+        run: npx expo prebuild --platform android --no-install
+        env:
+          # URL da API que o APK usará (configure em Settings → Variables)
+          EXPO_PUBLIC_API_URL: ${{ vars.EXPO_PUBLIC_API_URL }}
+
+      - name: Compilar APK (release)
+        working-directory: apps/mobile/android
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: Renomear artefato
+        run: cp apps/mobile/android/app/build/outputs/apk/release/app-release.apk foco-${{ github.ref_name }}.apk
+
+      - name: Criar GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: foco-${{ github.ref_name }}.apk
+          body: |
+            APK Android para demonstração (assinado com keystore de debug — permita
+            "fontes desconhecidas" para instalar). iOS: rodar via Expo, ver README.

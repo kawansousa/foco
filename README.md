@@ -1,16 +1,75 @@
-# Foco — monorepo
+<div align="center">
 
-App de metas com prazo, check-in diário, diário de dificuldade, troféus e lembretes com o avatar **Fô**.
+# 🌱 Foco
+
+**Metas com prazo. Progresso todo dia. Troféus de verdade.**
+
+App full-stack de hábitos e metas: você define um objetivo com prazo e um passo diário,
+faz check-in com um toque, registra o quanto foi difícil — e o **Fô**, o lembrete amigável
+do app, acompanha seu ritmo com mensagens no tom que você escolher.
+
+[![CI](https://github.com/kawansousa/foco/actions/workflows/ci.yml/badge.svg)](https://github.com/kawansousa/foco/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/kawansousa/foco?label=release)](../../releases)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+![TypeScript](https://img.shields.io/badge/TypeScript-estrito-3178C6?logo=typescript&logoColor=white)
+![Expo](https://img.shields.io/badge/Expo-SDK%2057-000020?logo=expo&logoColor=white)
+![NestJS](https://img.shields.io/badge/NestJS-11-E0234E?logo=nestjs&logoColor=white)
+![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white)
+![Prisma](https://img.shields.io/badge/Prisma-SQLite-2D3748?logo=prisma&logoColor=white)
+
+📦 **[Baixar a última release (APK Android) →](../../releases/latest)**
+
+</div>
+
+---
+
+## 📱 O app
+
+| Hoje | Metas | Progresso | Troféus | Fô |
+| :--: | :--: | :--: | :--: | :--: |
+| <picture><source media="(prefers-color-scheme: dark)" srcset="apps/web/public/app/hoje-dark.png"><img src="apps/web/public/app/hoje-light.png" width="150" alt="Aba Hoje"></picture> | <picture><source media="(prefers-color-scheme: dark)" srcset="apps/web/public/app/metas-dark.png"><img src="apps/web/public/app/metas-light.png" width="150" alt="Aba Metas"></picture> | <picture><source media="(prefers-color-scheme: dark)" srcset="apps/web/public/app/progresso-dark.png"><img src="apps/web/public/app/progresso-light.png" width="150" alt="Aba Progresso"></picture> | <picture><source media="(prefers-color-scheme: dark)" srcset="apps/web/public/app/trofeus-dark.png"><img src="apps/web/public/app/trofeus-light.png" width="150" alt="Aba Troféus"></picture> | <picture><source media="(prefers-color-scheme: dark)" srcset="apps/web/public/app/fo-dark.png"><img src="apps/web/public/app/fo-light.png" width="150" alt="Aba Fô"></picture> |
+
+- **Check-in com um toque** e diário de dificuldade (1–5) com comentário
+- **Sequência (streak)** que respeita dias de descanso configuráveis
+- **Troféus** com data, contexto e a sua história da conquista
+- **Filtros por dia ou intervalo** (calendário próprio) nas abas Hoje, Metas e Progresso
+- **Análises**: constância por dia, dias fortes da semana, dificuldade média e pizza "como foram os dias" com leitura automática
+- **Lembretes locais do Fô** em três tons (leve/neutro/firme) + notificação de "Dia completo!"
+- **Tema claro/escuro/sistema**, foto de perfil e busca em todas as listas
+
+## 🧭 Por que este projeto vale a sua atenção
+
+Este é um **monorepo full-stack completo**, escrito em TypeScript estrito de ponta a ponta:
+
+- **Domínio compartilhado de verdade**: tipos, schemas (zod), regras puras de progresso/sequência,
+  catálogo de troféus e o cliente HTTP tipado vivem em `packages/shared` — API, app e site consomem o mesmo contrato.
+- **API NestJS + Prisma** com autenticação JWT, guard global, validação com zod, rate limiting,
+  relógio injetável (testes de regras de data determinísticos) e **137 testes** (unitários + e2e com SQLite real isolado).
+- **App Expo (iOS/Android/Web)** com expo-router, notificações locais, tema persistido e componentes próprios
+  (calendário de intervalo, gráfico de pizza em SVG, mockup de iPhone na landing).
+- **CI/CD com GitHub Actions**: typecheck + testes em cada push; release com APK anexado a cada tag `v*`.
 
 ```
 apps/
   api/       API HTTP (NestJS + Prisma/SQLite) usada pelo app e pelo site
-  mobile/    App de celular (Expo + expo-router, iOS/Android)
+  mobile/    App de celular (Expo + expo-router, iOS/Android/Web)
   web/       Site/landing (Next.js 16)
 packages/
   shared/    Tipos, schemas (zod), regras de progresso/sequência, catálogo de
              troféus, mensagens do Fô e cliente HTTP tipado
 ```
+
+## 📦 Releases
+
+Cada tag `v*` dispara o workflow de release, que roda os testes, compila o **APK Android**
+e publica em **[Releases](../../releases)** com notas geradas automaticamente.
+
+```bash
+git tag v0.1.0 && git push origin v0.1.0
+```
+
+> O APK é assinado com keystore de debug — ideal para demonstração e instalação direta
+> ("fontes desconhecidas"). Para lojas, o caminho é EAS Build. No iOS, rode via Expo (abaixo).
 
 ## Rodando tudo
 
