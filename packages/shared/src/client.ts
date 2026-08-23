@@ -3,6 +3,7 @@ import type {
   LoginInput,
   RegisterInput,
   UpdateGoalInput,
+  UpdateMeInput,
   UpdateSettingsInput,
   UpdateTrophyInput,
   UpsertCheckinInput,
@@ -81,6 +82,7 @@ export function createFocoClient(opts: ClientOptions) {
       register: (input: RegisterInput) => request<AuthResponse>("POST", "/auth/register", input),
       login: (input: LoginInput) => request<AuthResponse>("POST", "/auth/login", input),
       me: () => request<MeResponse>("GET", "/me"),
+      updateMe: (input: UpdateMeInput) => request<MeResponse>("PATCH", "/me", input),
     },
 
     goals: {

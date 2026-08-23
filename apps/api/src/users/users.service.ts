@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
-import type { User } from "@foco/shared";
+import type { UpdateMeInput, User } from "@foco/shared";
 import { toUser } from "../common/mappers";
 import type { User as UserRow } from "../generated/prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
@@ -24,6 +24,18 @@ export class UsersService {
     const row = await this.prisma.user.create({
       data: { ...input, settings: { create: {} } },
     });
+    return toUser(row);
+  }
+
+  /** Perfil: nome e/ou foto (avatar null remove a foto). Campos ausentes não mudam. */
+  async update(userId: string, input: UpdateMeInput): Promise<User> {
+    const data = {
+      ...(input.name !== undefined && { name: input.name }),
+      ...(input.avatar !== undefined && { avatar: input.avatar }),
+    };
+    const row = Object.keys(data).length
+      ? await this.prisma.user.update({ where: { id: userId }, data })
+      : await this.prisma.user.findUniqueOrThrow({ where: { id: userId } });
     return toUser(row);
   }
 }

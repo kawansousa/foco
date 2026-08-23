@@ -33,6 +33,18 @@ export const loginSchema = z.object({
 });
 export type LoginInput = z.infer<typeof loginSchema>;
 
+/** Foto de perfil: data URL pequena (jpeg base64, ~256px). */
+export const updateMeSchema = z.object({
+  name: z.string().trim().min(2, "Nome muito curto").max(60).optional(),
+  avatar: z
+    .string()
+    .regex(/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/, "Imagem inválida")
+    .max(400_000, "Imagem muito grande")
+    .nullable()
+    .optional(),
+});
+export type UpdateMeInput = z.infer<typeof updateMeSchema>;
+
 /* ---------- metas ---------- */
 
 export const createGoalSchema = z

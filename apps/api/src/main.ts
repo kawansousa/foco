@@ -2,12 +2,13 @@ import "reflect-metadata";
 import { Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { NestFactory } from "@nestjs/core";
+import type { NestExpressApplication } from "@nestjs/platform-express";
 import { AppModule } from "./app.module";
 import { configureApp } from "./app.setup";
 import type { Env } from "./config/env";
 
 async function bootstrap() {
-  const app = configureApp(await NestFactory.create(AppModule));
+  const app = configureApp(await NestFactory.create<NestExpressApplication>(AppModule));
   const config = app.get(ConfigService<Env, true>);
   const port = config.get("port", { infer: true });
 

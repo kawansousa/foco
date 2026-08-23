@@ -1,8 +1,9 @@
 import { ConflictException, Injectable, UnauthorizedException } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
-import type { AuthResponse, LoginInput, MeResponse, RegisterInput } from "@foco/shared";
+import type { AuthResponse, LoginInput, MeResponse, RegisterInput, UpdateMeInput } from "@foco/shared";
 import { toUser } from "../common/mappers";
 import { SettingsService } from "../settings/settings.service";
+import { TrophiesService } from "../trophies/trophies.service";
 import { UsersService } from "../users/users.service";
 import { PasswordService } from "./password.service";
 
@@ -12,6 +13,7 @@ export class AuthService {
     private readonly users: UsersService,
     private readonly settings: SettingsService,
     private readonly passwords: PasswordService,
+    private readonly trophies: TrophiesService,
     private readonly jwt: JwtService,
   ) {}
 
@@ -24,7 +26,7 @@ export class AuthService {
       email: input.email,
       passwordHash: await this.passwords.hash(input.password),
     });
-    return { token: await this.sign(user.id), user, settings: await this.settings.get(user.id) };
+    return { token: await this.sign(user.id), user, settings: await this.settings.get(user.id), trophyCount: 0 };
   }
 
   async login(input: LoginInput): Promise<AuthResponse> {
@@ -33,11 +35,22 @@ export class AuthService {
     if (!row || !(await this.passwords.verify(input.password, row.passwordHash))) {
       throw new UnauthorizedException("E-mail ou senha incorretos.");
     }
-    return { token: await this.sign(row.id), user: toUser(row), settings: await this.settings.get(row.id) };
+    const [settings, trophyCount] = await Promise.all([this.settings.get(row.id), this.trophies.countEarned(row.id)]);
+    return { token: await this.sign(row.id), user: toUser(row), settings, trophyCount };
   }
 
   async me(userId: string): Promise<MeResponse> {
-    return { user: await this.users.getById(userId), settings: await this.settings.get(userId) };
+    // Usuário primeiro: se a conta sumiu, é 404 (e não se cria settings órfã).
+    const user = await this.users.getById(userId);
+    const [settings, trophyCount] = await Promise.all([this.settings.get(userId), this.trophies.countEarned(userId)]);
+    return { user, settings, trophyCount };
+  }
+
+  /** Atualiza nome/foto e devolve o perfil completo (mesmo formato de GET /me). */
+  async updateMe(userId: string, input: UpdateMeInput): Promise<MeResponse> {
+    await this.users.getById(userId); // 404 se a conta não existe mais
+    await this.users.update(userId, input);
+    return this.me(userId);
   }
 
   private sign(userId: string): Promise<string> {

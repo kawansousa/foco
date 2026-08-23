@@ -16,6 +16,7 @@ export const toUser = (u: UserRow): User => ({
   id: u.id,
   name: u.name,
   email: u.email,
+  avatar: u.avatar ?? null,
   createdAt: u.createdAt.toISOString(),
 });
 

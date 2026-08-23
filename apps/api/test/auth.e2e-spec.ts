@@ -1,7 +1,7 @@
 import { JwtService } from "@nestjs/jwt";
 import { DEFAULT_SETTINGS } from "@foco/shared";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { bearer, createTestApp, registerUser, type TestApp } from "./helpers/test-app";
+import { bearer, checkin, createGoal, createTestApp, registerUser, TODAY, type TestApp } from "./helpers/test-app";
 
 describe("autenticação", () => {
   let t: TestApp;
@@ -22,9 +22,11 @@ describe("autenticação", () => {
         id: expect.any(String),
         name: "Ana Souza",
         email: "ana@exemplo.com",
+        avatar: null,
         createdAt: expect.any(String),
       });
       expect(res.body.settings).toEqual({ ...DEFAULT_SETTINGS, restDays: [] });
+      expect(res.body.trophyCount).toBe(0);
       expect(JSON.stringify(res.body)).not.toMatch(/password|senha-forte/i);
     });
 
@@ -51,6 +53,15 @@ describe("autenticação", () => {
       expect(res.body.user.id).toBe(user.id);
       expect(res.body.token).toEqual(expect.any(String));
       expect(res.body.settings).toBeDefined();
+      expect(res.body.trophyCount).toBe(0);
+    });
+
+    it("login devolve o total de troféus conquistados", async () => {
+      const user = await registerUser(t.http, { email: "trofeus@exemplo.com", password: "minha-senha-1" });
+      const goal = await createGoal(t.http, user);
+      await checkin(t.http, user, goal.id, TODAY, { difficulty: 5 }); // primeiro_passo + superacao + sem_folga
+      const res = await t.http.post("/auth/login").send({ email: "trofeus@exemplo.com", password: "minha-senha-1" }).expect(200);
+      expect(res.body.trophyCount).toBe(3);
     });
 
     it("senha errada e e-mail inexistente dão a MESMA resposta 401 (não revela contas)", async () => {
@@ -72,6 +83,7 @@ describe("autenticação", () => {
       const res = await t.http.get("/me").set(user.auth).expect(200);
       expect(res.body.user.id).toBe(user.id);
       expect(res.body.settings.restDays).toEqual([]);
+      expect(res.body.trophyCount).toBe(0);
     });
 
     it.each([
@@ -116,10 +128,54 @@ describe("autenticação", () => {
         ["put", "/settings"],
         ["get", "/stats"],
         ["get", "/fo/schedule"],
+        ["patch", "/me"],
       ] as const) {
         const res = await t.http[method](path);
         expect(res.status, `${method.toUpperCase()} ${path}`).toBe(401);
       }
+    });
+  });
+
+  describe("PATCH /me (perfil)", () => {
+    const AVATAR = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/";
+
+    it("atualiza nome e foto e devolve o perfil completo", async () => {
+      const user = await registerUser(t.http, { name: "Nome Antigo" });
+      const res = await t.http.patch("/me").set(user.auth).send({ name: "  Nome Novo ", avatar: AVATAR }).expect(200);
+      expect(res.body.user).toMatchObject({ id: user.id, name: "Nome Novo", avatar: AVATAR });
+      expect(res.body.settings).toBeDefined();
+      expect(res.body.trophyCount).toBe(0);
+
+      const me = await t.http.get("/me").set(user.auth).expect(200);
+      expect(me.body.user.avatar).toBe(AVATAR);
+    });
+
+    it("campo ausente não muda; avatar null remove a foto", async () => {
+      const user = await registerUser(t.http, { name: "Fixo" });
+      await t.http.patch("/me").set(user.auth).send({ avatar: AVATAR }).expect(200);
+      const onlyName = await t.http.patch("/me").set(user.auth).send({}).expect(200);
+      expect(onlyName.body.user).toMatchObject({ name: "Fixo", avatar: AVATAR });
+      const removed = await t.http.patch("/me").set(user.auth).send({ avatar: null }).expect(200);
+      expect(removed.body.user).toMatchObject({ name: "Fixo", avatar: null });
+    });
+
+    it.each([
+      ["nome curto", { name: "A" }],
+      ["avatar que não é data URL de imagem", { avatar: "https://site.com/foto.jpg" }],
+      ["avatar com tipo não suportado", { avatar: "data:image/gif;base64,R0lGOD" }],
+      ["avatar grande demais", { avatar: `data:image/png;base64,${"A".repeat(400_001)}` }],
+    ])("rejeita %s com 400", async (_label, body) => {
+      const user = await registerUser(t.http);
+      const res = await t.http.patch("/me").set(user.auth).send(body).expect(400);
+      expect(res.body.issues).toBeDefined();
+    });
+
+    it("não altera o perfil de outro usuário", async () => {
+      const a = await registerUser(t.http, { name: "Pessoa A" });
+      const b = await registerUser(t.http, { name: "Pessoa B" });
+      await t.http.patch("/me").set(a.auth).send({ name: "Mudou A" }).expect(200);
+      const meB = await t.http.get("/me").set(b.auth).expect(200);
+      expect(meB.body.user.name).toBe("Pessoa B");
     });
   });
 });

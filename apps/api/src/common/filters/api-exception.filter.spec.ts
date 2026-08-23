@@ -63,6 +63,13 @@ describe("ApiExceptionFilter", () => {
     });
   });
 
+  it("erro do Express/body-parser (http-errors) mantém o status: 413 com mensagem amigável", () => {
+    const tooLarge = Object.assign(new Error("request entity too large"), { status: 413, expose: true, type: "entity.too.large" });
+    expect(run(tooLarge)).toEqual({ status: 413, body: { error: "Corpo da requisição grande demais." } });
+    const unsupported = Object.assign(new Error("unsupported charset"), { status: 415, expose: true });
+    expect(run(unsupported)).toEqual({ status: 415, body: { error: "unsupported charset" } });
+  });
+
   it("erro inesperado vira 500 genérico sem vazar detalhes", () => {
     expect(run(new Error("segredo do banco"))).toEqual({ status: 500, body: { error: "Erro interno." } });
     expect(Logger.prototype.error).toHaveBeenCalled();

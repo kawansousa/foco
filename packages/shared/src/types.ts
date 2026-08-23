@@ -9,6 +9,8 @@ export type User = {
   id: string;
   name: string;
   email: string;
+  /** data URL (image/jpeg;base64) ou null */
+  avatar: string | null;
   createdAt: string;
 };
 
@@ -132,8 +134,8 @@ export type GoalDetail = GoalWithProgress & {
   trophies: EarnedTrophy[];
 };
 
-export type AuthResponse = { token: string; user: User; settings: Settings };
+export type AuthResponse = { token: string; user: User; settings: Settings; trophyCount: number };
 
-export type MeResponse = { user: User; settings: Settings };
+export type MeResponse = { user: User; settings: Settings; trophyCount: number };
 
 export type ApiErrorBody = { error: string; issues?: { path: string; message: string }[] };

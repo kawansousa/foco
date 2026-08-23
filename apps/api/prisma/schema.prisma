@@ -24,6 +24,8 @@ model User {
   name         String
   email        String   @unique
   passwordHash String   @map("password_hash")
+  /// foto de perfil: data URL pequena (image/jpeg;base64) ou null
+  avatar       String?
   createdAt    DateTime @default(now()) @map("created_at")
 
   settings Settings?

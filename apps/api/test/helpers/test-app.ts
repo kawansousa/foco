@@ -1,5 +1,5 @@
 import { rmSync } from "node:fs";
-import type { INestApplication } from "@nestjs/common";
+import type { NestExpressApplication } from "@nestjs/platform-express";
 import { ConfigService } from "@nestjs/config";
 import { Test } from "@nestjs/testing";
 import request, { type Agent } from "supertest";
@@ -16,7 +16,7 @@ import { FixedClock } from "./fixed-clock";
 export const TODAY = "2026-03-10";
 
 export type TestApp = {
-  app: INestApplication;
+  app: NestExpressApplication;
   http: Agent;
   prisma: PrismaService;
   clock: FixedClock;
@@ -35,7 +35,7 @@ export async function createTestApp(): Promise<TestApp> {
     .useValue(clock)
     .compile();
 
-  const app = configureApp(moduleRef.createNestApplication({ logger: false }));
+  const app = configureApp(moduleRef.createNestApplication<NestExpressApplication>({ logger: false }));
 
   // Trava de segurança: nunca rodar a suíte contra um banco fora da pasta de testes.
   const dbPath = app.get(ConfigService<Env, true>).get("databasePath", { infer: true });

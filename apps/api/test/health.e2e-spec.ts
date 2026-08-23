@@ -23,6 +23,14 @@ describe("infra HTTP", () => {
     expect(res.body).toEqual({ error: "Corpo da requisição precisa ser JSON." });
   });
 
+  it("corpo acima do limite (1MB) responde 413 amigável, não 500", async () => {
+    const res = await t.http
+      .post("/waitlist")
+      .send({ email: "x@y.com", source: "a".repeat(1_100_000) })
+      .expect(413);
+    expect(res.body).toEqual({ error: "Corpo da requisição grande demais." });
+  });
+
   it("CORS liberado para qualquer origem quando CORS_ORIGINS está vazio", async () => {
     const res = await t.http.options("/health").set("Origin", "http://qualquer.com").set("Access-Control-Request-Method", "GET");
     expect(res.headers["access-control-allow-origin"]).toBe("*");

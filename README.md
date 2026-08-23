@@ -63,7 +63,7 @@ Sequência e progresso são funções puras em `packages/shared/src/progress.ts`
 Autenticação por `Authorization: Bearer <token>` (JWT). Datas são `YYYY-MM-DD` no fuso do cliente (mande `?date=` nas rotas de leitura).
 
 ```
-POST /auth/register {name,email,password}     POST /auth/login {email,password}     GET /me
+POST /auth/register {name,email,password}     POST /auth/login {email,password}     GET|PATCH /me
 GET  /goals?date=   POST /goals   GET|PATCH|DELETE /goals/:id   POST /goals/:id/complete
 GET  /today?date=                              PUT /checkins {goalId,date,done,difficulty?,note?,localTime?}
 GET  /checkins?from&to&goalId

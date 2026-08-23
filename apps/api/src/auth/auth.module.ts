@@ -5,6 +5,7 @@ import { JwtModule } from "@nestjs/jwt";
 import { JwtAuthGuard } from "../common/auth/jwt-auth.guard";
 import type { Env } from "../config/env";
 import { SettingsModule } from "../settings/settings.module";
+import { TrophiesModule } from "../trophies/trophies.module";
 import { UsersModule } from "../users/users.module";
 import { AuthController } from "./auth.controller";
 import { AuthService } from "./auth.service";
@@ -14,6 +15,7 @@ import { PasswordService } from "./password.service";
   imports: [
     UsersModule,
     SettingsModule,
+    TrophiesModule,
     JwtModule.registerAsync({
       global: true,
       inject: [ConfigService],

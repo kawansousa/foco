@@ -22,6 +22,11 @@ export class ApiExceptionFilter implements ExceptionFilter {
   }
 
   private normalize(exception: unknown): { status: number; body: ApiErrorBody } {
+    // Erros do body-parser/Express (http-errors): ex. corpo acima do limite → 413
+    if (isHttpError(exception)) {
+      const friendly = exception.status === HttpStatus.PAYLOAD_TOO_LARGE ? "Corpo da requisição grande demais." : exception.message;
+      return { status: exception.status, body: { error: friendly } };
+    }
     if (!(exception instanceof HttpException)) {
       return { status: HttpStatus.INTERNAL_SERVER_ERROR, body: { error: "Erro interno." } };
     }
@@ -49,3 +54,9 @@ export class ApiExceptionFilter implements ExceptionFilter {
   }
 }
 
+/** Erro no formato do pacote `http-errors` (usado pelo Express/body-parser): status 4xx exposto ao cliente. */
+function isHttpError(err: unknown): err is Error & { status: number; expose: boolean } {
+  if (!(err instanceof Error)) return false;
+  const e = err as Error & { status?: unknown; expose?: unknown };
+  return typeof e.status === "number" && e.status >= 400 && e.status < 500 && e.expose === true;
+}
